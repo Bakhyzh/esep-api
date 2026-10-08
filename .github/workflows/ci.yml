@@ -17,9 +17,12 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # unit + integration tests; Testcontainers uses the Docker daemon of the runner
+      # unit + integration tests; Testcontainers starts PostgreSQL, Redis and Kafka on the runner's Docker
       - name: Test
         run: ./mvnw -B verify
+
+      - name: Validate docker-compose.yml
+        run: docker compose config -q
 
       - name: Build Docker image
         run: docker build -t esep-api:ci .
