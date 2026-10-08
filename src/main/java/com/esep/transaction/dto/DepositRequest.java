@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-// temporary open endpoint for filling accounts; in stage 5 it becomes ADMIN-only
+// ADMIN only (see SecurityConfig): this is how money enters the system
 public record DepositRequest(
         @NotNull @Positive
         Long accountId,

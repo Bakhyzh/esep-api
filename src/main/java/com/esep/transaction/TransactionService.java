@@ -1,5 +1,6 @@
 package com.esep.transaction;
 
+import com.esep.security.CurrentUser;
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
 import com.esep.transaction.dto.TransactionResult;
@@ -23,30 +24,31 @@ public class TransactionService {
 
     private final TransactionProcessor processor;
 
-    public TransactionResult transfer(String idempotencyKey, TransferRequest request) {
+    public TransactionResult transfer(CurrentUser currentUser, String idempotencyKey, TransferRequest request) {
         try {
-            return processor.transfer(idempotencyKey, request);
+            return processor.transfer(currentUser, idempotencyKey, request);
         } catch (DataIntegrityViolationException e) {
-            return replayOrRethrow(idempotencyKey, request.fingerprint(), e);
+            return replayOrRethrow(currentUser, idempotencyKey, request.fingerprint(), e);
         }
     }
 
-    public TransactionResult deposit(String idempotencyKey, DepositRequest request) {
+    public TransactionResult deposit(CurrentUser currentUser, String idempotencyKey, DepositRequest request) {
         try {
-            return processor.deposit(idempotencyKey, request);
+            return processor.deposit(currentUser, idempotencyKey, request);
         } catch (DataIntegrityViolationException e) {
-            return replayOrRethrow(idempotencyKey, request.fingerprint(), e);
+            return replayOrRethrow(currentUser, idempotencyKey, request.fingerprint(), e);
         }
     }
 
-    public TransactionResponse getById(Long id) {
-        return processor.getById(id);
+    public TransactionResponse getById(CurrentUser currentUser, Long id) {
+        return processor.getById(currentUser, id);
     }
 
-    private TransactionResult replayOrRethrow(String idempotencyKey, String requestHash,
+    private TransactionResult replayOrRethrow(CurrentUser currentUser, String idempotencyKey, String requestHash,
                                               DataIntegrityViolationException e) {
         // not every integrity error is a key race (e.g. a CHECK constraint): replay only if the key exists now
-        TransactionResult result = processor.findReplay(idempotencyKey, requestHash).orElseThrow(() -> e);
+        TransactionResult result = processor.findReplay(currentUser, idempotencyKey, requestHash)
+                .orElseThrow(() -> e);
         log.info("Idempotency-Key race resolved by replay, key={}", idempotencyKey);
         return result;
     }

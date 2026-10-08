@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
@@ -44,6 +47,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(BusinessRuleException.class)
     public ProblemDetail handleBusinessRule(BusinessRuleException ex) {
         return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Business rule violated", ex.getMessage());
+    }
+
+    // 401: who are you? (no token, bad/expired token, wrong password on login)
+    @ExceptionHandler(AuthenticationException.class)
+    public ProblemDetail handleAuthentication(AuthenticationException ex) {
+        // never echo token parsing details back; the login message is safe and written by us
+        String detail = ex instanceof BadCredentialsException
+                ? ex.getMessage()
+                : "Missing, invalid or expired access token";
+        return problem(HttpStatus.UNAUTHORIZED, "Unauthorized", detail);
+    }
+
+    // 403: I know who you are, but you are not allowed to do this
+    @ExceptionHandler(AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
+        return problem(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to perform this action");
     }
 
     // parent of both optimistic (@Version) and pessimistic (deadlock, lock timeout) failures:

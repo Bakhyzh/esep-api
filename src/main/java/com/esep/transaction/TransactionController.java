@@ -1,5 +1,6 @@
 package com.esep.transaction;
 
+import com.esep.security.CurrentUser;
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
 import com.esep.transaction.dto.TransactionResult;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,21 +34,23 @@ public class TransactionController {
 
     @PostMapping("/transfers")
     public ResponseEntity<TransactionResponse> transfer(
+            @AuthenticationPrincipal CurrentUser currentUser,
             @RequestHeader(IDEMPOTENCY_KEY) @NotBlank @Size(max = 64) String idempotencyKey,
             @Valid @RequestBody TransferRequest request) {
-        return created(transactionService.transfer(idempotencyKey, request));
+        return created(transactionService.transfer(currentUser, idempotencyKey, request));
     }
 
     @PostMapping("/deposits")
     public ResponseEntity<TransactionResponse> deposit(
+            @AuthenticationPrincipal CurrentUser currentUser,
             @RequestHeader(IDEMPOTENCY_KEY) @NotBlank @Size(max = 64) String idempotencyKey,
             @Valid @RequestBody DepositRequest request) {
-        return created(transactionService.deposit(idempotencyKey, request));
+        return created(transactionService.deposit(currentUser, idempotencyKey, request));
     }
 
     @GetMapping("/transactions/{id}")
-    public TransactionResponse getById(@PathVariable Long id) {
-        return transactionService.getById(id);
+    public TransactionResponse getById(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable Long id) {
+        return transactionService.getById(currentUser, id);
     }
 
     // first call -> 201 Created; repeated call with the same key -> 200 OK with the saved result

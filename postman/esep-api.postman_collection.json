@@ -1,8 +1,18 @@
 {
   "info": {
     "name": "Esep API",
-    "description": "Wallets and transfers with a double-entry ledger.\n\nRun order: Accounts (create or list) -> Transactions -> Errors.\nDev seed users: alice (id 1), bob (id 2). Set `baseUrl` if the app runs on another port.\nIdempotency keys are generated in pre-request scripts; the 'retry' requests reuse the previous key on purpose.",
+    "description": "Wallets and transfers with a double-entry ledger.\n\nRun folders in order: Auth -> Accounts -> Transactions -> Security -> Errors.\nDev seed users (password `password123`): alice@esep.dev, bob@esep.dev (USER), admin@esep.dev (ADMIN).\nAuth/Login requests save JWTs to aliceToken, bobToken, adminToken; other requests use them as Bearer tokens.\nIdempotency keys are generated in pre-request scripts; the 'retry' request reuses the previous key on purpose.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{aliceToken}}",
+        "type": "string"
+      }
+    ]
   },
   "variable": [
     {
@@ -10,16 +20,40 @@
       "value": "http://localhost:8081"
     },
     {
-      "key": "aliceUserId",
-      "value": "1"
+      "key": "password",
+      "value": "password123"
     },
     {
-      "key": "bobUserId",
-      "value": "2"
+      "key": "aliceEmail",
+      "value": "alice@esep.dev"
+    },
+    {
+      "key": "bobEmail",
+      "value": "bob@esep.dev"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@esep.dev"
     },
     {
       "key": "currency",
       "value": "KZT"
+    },
+    {
+      "key": "aliceToken",
+      "value": ""
+    },
+    {
+      "key": "bobToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "bobUserId",
+      "value": ""
     },
     {
       "key": "aliceAccountId",
@@ -43,6 +77,288 @@
     }
   ],
   "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register new user",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user-{{$timestamp}}@esep.dev\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Role is USER, no password hash\", () => {",
+                  "    pm.expect(pm.response.json().role).to.eql(\"USER\");",
+                  "    pm.expect(pm.response.json()).to.not.have.property(\"passwordHash\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login alice",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"aliceToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login bob",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{bobEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"bobToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"adminToken\", pm.response.json().accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me (Bob)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.collectionVariables.set(\"bobUserId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login wrong password -> 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{aliceEmail}}\",\n  \"password\": \"wrong-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "Accounts",
       "item": [
@@ -68,7 +384,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": {{aliceUserId}},\n  \"currency\": \"{{currency}}\"\n}",
+              "raw": "{\n  \"currency\": \"{{currency}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -85,7 +401,7 @@
                   "if (pm.response.code === 201) {",
                   "    pm.collectionVariables.set(\"aliceAccountId\", pm.response.json().id);",
                   "}",
-                  "pm.test(\"201 Created, or 409 if the account already exists (then run the List request)\", () =>",
+                  "pm.test(\"201 Created, or 409 if it already exists (then run the List request)\", () =>",
                   "    pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
                 ]
               }
@@ -112,9 +428,19 @@
                 "accounts"
               ]
             },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": {{bobUserId}},\n  \"currency\": \"{{currency}}\"\n}",
+              "raw": "{\n  \"currency\": \"{{currency}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -131,7 +457,7 @@
                   "if (pm.response.code === 201) {",
                   "    pm.collectionVariables.set(\"bobAccountId\", pm.response.json().id);",
                   "}",
-                  "pm.test(\"201 Created, or 409 if the account already exists (then run the List request)\", () =>",
+                  "pm.test(\"201 Created, or 409 if it already exists (then run the List request)\", () =>",
                   "    pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
                 ]
               }
@@ -139,27 +465,20 @@
           ]
         },
         {
-          "name": "List Alice accounts",
+          "name": "List my accounts (Alice)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/accounts?userId={{aliceUserId}}",
+              "raw": "{{baseUrl}}/api/accounts",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "accounts"
-              ],
-              "query": [
-                {
-                  "key": "userId",
-                  "value": "{{aliceUserId}}"
-                }
               ]
-            },
-            "description": "Saves Alice's active account in {{currency}} to aliceAccountId (useful when Create returned 409)."
+            }
           },
           "event": [
             {
@@ -169,17 +488,56 @@
                 "exec": [
                   "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
                   "const acc = pm.response.json().find(a => a.status === \"ACTIVE\" && a.currency === pm.collectionVariables.get(\"currency\"));",
-                  "if (acc) {",
-                  "    pm.collectionVariables.set(\"aliceAccountId\", acc.id);",
-                  "}",
-                  "pm.test(\"Active account found and saved to aliceAccountId\", () => pm.expect(acc).to.exist);"
+                  "if (acc) { pm.collectionVariables.set(\"aliceAccountId\", acc.id); }",
+                  "pm.test(\"Active account saved to aliceAccountId\", () => pm.expect(acc).to.exist);"
                 ]
               }
             }
           ]
         },
         {
-          "name": "List Bob accounts",
+          "name": "List my accounts (Bob)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const acc = pm.response.json().find(a => a.status === \"ACTIVE\" && a.currency === pm.collectionVariables.get(\"currency\"));",
+                  "if (acc) { pm.collectionVariables.set(\"bobAccountId\", acc.id); }",
+                  "pm.test(\"Active account saved to bobAccountId\", () => pm.expect(acc).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin lists Bob's accounts",
           "request": {
             "method": "GET",
             "header": [],
@@ -198,6 +556,16 @@
                   "value": "{{bobUserId}}"
                 }
               ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
             }
           },
           "event": [
@@ -206,12 +574,7 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
-                  "const acc = pm.response.json().find(a => a.status === \"ACTIVE\" && a.currency === pm.collectionVariables.get(\"currency\"));",
-                  "if (acc) {",
-                  "    pm.collectionVariables.set(\"bobAccountId\", acc.id);",
-                  "}",
-                  "pm.test(\"Active account found and saved to bobAccountId\", () => pm.expect(acc).to.exist);"
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
                 ]
               }
             }
@@ -252,7 +615,7 @@
       "name": "Transactions",
       "item": [
         {
-          "name": "Deposit 500 to Alice",
+          "name": "Deposit 500 to Alice (admin)",
           "request": {
             "method": "POST",
             "header": [
@@ -273,6 +636,16 @@
               "path": [
                 "api",
                 "deposits"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
               ]
             },
             "body": {
@@ -301,10 +674,8 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
-                  "pm.test(\"Balanced: system DEBIT + user CREDIT\", () => {",
-                  "    const e = pm.response.json().entries;",
-                  "    pm.expect(e.map(x => x.direction)).to.eql([\"DEBIT\", \"CREDIT\"]);",
-                  "});"
+                  "pm.test(\"Balanced: system DEBIT + user CREDIT\", () =>",
+                  "    pm.expect(pm.response.json().entries.map(x => x.direction)).to.eql([\"DEBIT\", \"CREDIT\"]));"
                 ]
               }
             }
@@ -361,7 +732,7 @@
                 "exec": [
                   "pm.test(\"Status is 201\", () => pm.response.to.have.status(201));",
                   "pm.collectionVariables.set(\"transactionId\", pm.response.json().id);",
-                  "pm.test(\"Location header points to the transaction\", () => pm.response.to.have.header(\"Location\"));"
+                  "pm.test(\"Location header\", () => pm.response.to.have.header(\"Location\"));"
                 ]
               }
             }
@@ -400,7 +771,7 @@
                 }
               }
             },
-            "description": "Same Idempotency-Key and the same request (100.2500 == 100.25): returns the original result, money moves only once."
+            "description": "Same Idempotency-Key and same request (100.2500 == 100.25): original result, money moves once."
           },
           "event": [
             {
@@ -464,7 +835,7 @@
           ]
         },
         {
-          "name": "Get transaction",
+          "name": "Get transaction (Alice)",
           "request": {
             "method": "GET",
             "header": [],
@@ -488,10 +859,297 @@
                 "exec": [
                   "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Entries sum to zero\", () => {",
-                  "    const sum = pm.response.json().entries",
-                  "        .reduce((s, e) => s + (e.direction === \"DEBIT\" ? -e.amount : e.amount), 0);",
+                  "    const sum = pm.response.json().entries.reduce((s, e) => s + (e.direction === \"DEBIT\" ? -e.amount : e.amount), 0);",
                   "    pm.expect(Math.abs(sum)).to.be.below(1e-9);",
                   "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get transaction (Bob, receiver)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions/{{transactionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions",
+                "{{transactionId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Security",
+      "item": [
+        {
+          "name": "No token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invalid token -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "not.a.jwt",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User deposits -> 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/deposits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "deposits"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"accountId\": {{aliceAccountId}},\n  \"amount\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bob reads Alice's account -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts/{{aliceAccountId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts",
+                "{{aliceAccountId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bob transfers from Alice's account -> 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/transfers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transfers"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromAccountId\": {{aliceAccountId}},\n  \"toAccountId\": {{bobAccountId}},\n  \"amount\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alice lists Bob's accounts -> 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts?userId={{bobUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts"
+              ],
+              "query": [
+                {
+                  "key": "userId",
+                  "value": "{{bobUserId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
                 ]
               }
             }
@@ -705,7 +1363,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"userId\": {{aliceUserId}},\n  \"currency\": \"kz\"\n}",
+              "raw": "{\n  \"currency\": \"kz\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

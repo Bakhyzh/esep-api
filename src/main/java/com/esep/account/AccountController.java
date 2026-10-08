@@ -2,9 +2,11 @@ package com.esep.account;
 
 import com.esep.account.dto.AccountResponse;
 import com.esep.account.dto.CreateAccountRequest;
+import com.esep.security.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,8 +27,9 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping
-    public ResponseEntity<AccountResponse> create(@Valid @RequestBody CreateAccountRequest request) {
-        AccountResponse created = accountService.create(request);
+    public ResponseEntity<AccountResponse> create(@AuthenticationPrincipal CurrentUser currentUser,
+                                                  @Valid @RequestBody CreateAccountRequest request) {
+        AccountResponse created = accountService.create(currentUser, request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.id())
@@ -35,18 +38,19 @@ public class AccountController {
     }
 
     @GetMapping("/{id}")
-    public AccountResponse getById(@PathVariable Long id) {
-        return accountService.getById(id);
+    public AccountResponse getById(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable Long id) {
+        return accountService.getById(currentUser, id);
     }
 
-    // temporary: in stage 5 this becomes "my accounts" based on the JWT
+    // my accounts; ADMIN may pass ?userId= to see another user's accounts
     @GetMapping
-    public List<AccountResponse> getByUser(@RequestParam Long userId) {
-        return accountService.getByUser(userId);
+    public List<AccountResponse> getByUser(@AuthenticationPrincipal CurrentUser currentUser,
+                                           @RequestParam(required = false) Long userId) {
+        return accountService.getByUser(currentUser, userId);
     }
 
     @PostMapping("/{id}/close")
-    public AccountResponse close(@PathVariable Long id) {
-        return accountService.close(id);
+    public AccountResponse close(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable Long id) {
+        return accountService.close(currentUser, id);
     }
 }

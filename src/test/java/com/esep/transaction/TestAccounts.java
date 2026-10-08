@@ -30,7 +30,7 @@ final class TestAccounts {
         return account;
     }
 
-    private static User user(long id) {
+    static User user(long id) {
         User user = new User("user" + id + "@esep.dev", "hash", Role.USER);
         ReflectionTestUtils.setField(user, "id", id);
         return user;
