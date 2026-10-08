@@ -23,6 +23,10 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+    postgresql:
+      # session-level lock instead of a transaction kept open during migrations:
+      # otherwise CREATE INDEX CONCURRENTLY (V6) waits for Flyway's own transaction forever
+      transactional-lock: false
 
 server:
   port: ${SERVER_PORT:8081}

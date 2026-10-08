@@ -5,6 +5,8 @@ import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
 import com.esep.transaction.dto.TransactionResult;
 import com.esep.transaction.dto.TransferRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -22,6 +24,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
+@Tag(name = "Transactions", description = "Double-entry transfers and deposits. POST requests require an Idempotency-Key header: a retry with the same key returns the original result")
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class TransactionController {
 
     private final TransactionService transactionService;
 
+    @Operation(summary = "Transfer money from an own account (201; retry with the same key: 200 + Idempotent-Replayed)")
     @PostMapping("/transfers")
     public ResponseEntity<TransactionResponse> transfer(
             @AuthenticationPrincipal CurrentUser currentUser,
@@ -40,6 +44,7 @@ public class TransactionController {
         return created(transactionService.transfer(currentUser, idempotencyKey, request));
     }
 
+    @Operation(summary = "Deposit money from the system funding account (ADMIN only)")
     @PostMapping("/deposits")
     public ResponseEntity<TransactionResponse> deposit(
             @AuthenticationPrincipal CurrentUser currentUser,
@@ -48,6 +53,7 @@ public class TransactionController {
         return created(transactionService.deposit(currentUser, idempotencyKey, request));
     }
 
+    @Operation(summary = "Get a transaction with its ledger entries (participants and ADMIN)")
     @GetMapping("/transactions/{id}")
     public TransactionResponse getById(@AuthenticationPrincipal CurrentUser currentUser, @PathVariable Long id) {
         return transactionService.getById(currentUser, id);
