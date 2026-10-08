@@ -2,6 +2,7 @@ package com.esep.account.dto;
 
 import com.esep.account.Account;
 import com.esep.account.AccountStatus;
+import com.esep.account.AccountType;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -12,6 +13,7 @@ public record AccountResponse(
         String currency,
         BigDecimal balance,
         AccountStatus status,
+        AccountType type,
         Instant createdAt,
         Instant closedAt
 ) {
@@ -23,6 +25,7 @@ public record AccountResponse(
                 account.getCurrency().getCurrencyCode(),
                 account.getBalance(),
                 account.getStatus(),
+                account.getType(),
                 account.getCreatedAt(),
                 account.getClosedAt()
         );
