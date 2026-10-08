@@ -1,83 +1,53 @@
 package com.esep.transaction;
 
-import com.esep.account.Account;
-import com.esep.account.AccountRepository;
-import com.esep.account.AccountStatus;
-import com.esep.account.AccountType;
-import com.esep.common.exception.BusinessRuleException;
-import com.esep.common.exception.ConflictException;
-import com.esep.common.exception.ResourceNotFoundException;
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
+import com.esep.transaction.dto.TransactionResult;
 import com.esep.transaction.dto.TransferRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Entry point for controllers. Intentionally NOT @Transactional:
+ * it handles the case when two requests with the same Idempotency-Key ran in parallel
+ * on different accounts (so they did not wait on each other's locks).
+ * The UNIQUE index lets only one INSERT win; the loser's transaction is rolled back,
+ * and here, outside of it, we read and return the winner's result.
+ */
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class TransactionService {
 
-    private final LedgerTransactionRepository transactionRepository;
-    private final AccountRepository accountRepository;
+    private final TransactionProcessor processor;
 
-    /**
-     * One DB transaction: two balance updates + transaction row + two entries.
-     * Any exception (insufficient funds, closed account, DB error) rolls back all of it.
-     * Locking and safe retries with the same key come in stage 4.
-     */
-    @Transactional
-    public TransactionResponse transfer(String idempotencyKey, TransferRequest request) {
-        requireNewKey(idempotencyKey);
-        if (request.fromAccountId().equals(request.toAccountId())) {
-            throw new BusinessRuleException("Cannot transfer to the same account");
+    public TransactionResult transfer(String idempotencyKey, TransferRequest request) {
+        try {
+            return processor.transfer(idempotencyKey, request);
+        } catch (DataIntegrityViolationException e) {
+            return replayOrRethrow(idempotencyKey, request.fingerprint(), e);
         }
-
-        Account from = findAccount(request.fromAccountId());
-        Account to = findAccount(request.toAccountId());
-        if (from.isSystem() || to.isSystem()) {
-            throw new BusinessRuleException("Transfers are allowed only between user accounts");
-        }
-        if (!from.getCurrency().equals(to.getCurrency())) {
-            throw new BusinessRuleException("Currency mismatch: " + from.getCurrency() + " -> " + to.getCurrency());
-        }
-
-        LedgerTransaction tx = LedgerTransaction.transfer(idempotencyKey, from, to, request.amount());
-        // accounts are managed entities: their new balances are flushed by dirty checking on commit
-        return TransactionResponse.from(transactionRepository.save(tx));
     }
 
-    @Transactional
-    public TransactionResponse deposit(String idempotencyKey, DepositRequest request) {
-        requireNewKey(idempotencyKey);
-        Account target = findAccount(request.accountId());
-        if (target.isSystem()) {
-            throw new BusinessRuleException("Cannot deposit to a system account");
+    public TransactionResult deposit(String idempotencyKey, DepositRequest request) {
+        try {
+            return processor.deposit(idempotencyKey, request);
+        } catch (DataIntegrityViolationException e) {
+            return replayOrRethrow(idempotencyKey, request.fingerprint(), e);
         }
-        Account funding = accountRepository
-                .findByTypeAndCurrencyAndStatus(AccountType.SYSTEM, target.getCurrency(), AccountStatus.ACTIVE)
-                .orElseThrow(() -> new BusinessRuleException("Deposits in " + target.getCurrency() + " are not supported"));
-
-        LedgerTransaction tx = LedgerTransaction.deposit(idempotencyKey, funding, target, request.amount());
-        return TransactionResponse.from(transactionRepository.save(tx));
     }
 
     public TransactionResponse getById(Long id) {
-        return transactionRepository.findWithEntriesById(id)
-                .map(TransactionResponse::from)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction", id));
+        return processor.getById(id);
     }
 
-    // stage 3: a repeated key is rejected; stage 4 will return the original result instead
-    private void requireNewKey(String idempotencyKey) {
-        if (transactionRepository.existsByIdempotencyKey(idempotencyKey)) {
-            throw new ConflictException("Transaction with this Idempotency-Key already exists");
-        }
-    }
-
-    private Account findAccount(Long id) {
-        return accountRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Account", id));
+    private TransactionResult replayOrRethrow(String idempotencyKey, String requestHash,
+                                              DataIntegrityViolationException e) {
+        // not every integrity error is a key race (e.g. a CHECK constraint): replay only if the key exists now
+        TransactionResult result = processor.findReplay(idempotencyKey, requestHash).orElseThrow(() -> e);
+        log.info("Idempotency-Key race resolved by replay, key={}", idempotencyKey);
+        return result;
     }
 }

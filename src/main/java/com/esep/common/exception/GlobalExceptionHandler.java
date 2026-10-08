@@ -2,13 +2,13 @@ package com.esep.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.validation.method.ParameterErrors;
 import org.springframework.validation.method.ParameterValidationResult;
@@ -46,10 +46,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problem(HttpStatus.UNPROCESSABLE_CONTENT, "Business rule violated", ex.getMessage());
     }
 
-    // @Version check failed: someone changed the account between our read and our write
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    public ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
-        log.warn("Optimistic lock conflict: {}", ex.getMessage());
+    // parent of both optimistic (@Version) and pessimistic (deadlock, lock timeout) failures:
+    // the request itself is fine, it just lost a race, so the client may safely retry
+    @ExceptionHandler(ConcurrencyFailureException.class)
+    public ProblemDetail handleConcurrencyFailure(ConcurrencyFailureException ex) {
+        log.warn("Concurrency conflict: {}", ex.getMessage());
         return problem(HttpStatus.CONFLICT, "Concurrent modification",
                 "The resource was modified by another request, please retry");
     }

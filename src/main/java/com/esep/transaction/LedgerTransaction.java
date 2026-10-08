@@ -55,6 +55,9 @@ public class LedgerTransaction {
     @Column(name = "idempotency_key", nullable = false, length = 64, updatable = false)
     private String idempotencyKey;
 
+    @Column(name = "request_hash", nullable = false, length = 64, updatable = false)
+    private String requestHash;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -63,29 +66,32 @@ public class LedgerTransaction {
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.PERSIST)
     private List<LedgerEntry> entries = new ArrayList<>();
 
-    private LedgerTransaction(TransactionType type, String idempotencyKey) {
+    private LedgerTransaction(TransactionType type, String idempotencyKey, String requestHash) {
         this.type = type;
         this.idempotencyKey = idempotencyKey;
+        this.requestHash = requestHash;
         this.status = TransactionStatus.PENDING;
     }
 
-    public static LedgerTransaction transfer(String idempotencyKey, Account from, Account to, BigDecimal amount) {
-        return move(TransactionType.TRANSFER, idempotencyKey, from, to, amount);
+    public static LedgerTransaction transfer(String idempotencyKey, String requestHash,
+                                             Account from, Account to, BigDecimal amount) {
+        return move(TransactionType.TRANSFER, idempotencyKey, requestHash, from, to, amount);
     }
 
     /** Money comes from the outside world: the system funding account is debited. */
-    public static LedgerTransaction deposit(String idempotencyKey, Account funding, Account target, BigDecimal amount) {
-        return move(TransactionType.DEPOSIT, idempotencyKey, funding, target, amount);
+    public static LedgerTransaction deposit(String idempotencyKey, String requestHash,
+                                            Account funding, Account target, BigDecimal amount) {
+        return move(TransactionType.DEPOSIT, idempotencyKey, requestHash, funding, target, amount);
     }
 
     public List<LedgerEntry> getEntries() {
         return Collections.unmodifiableList(entries);
     }
 
-    private static LedgerTransaction move(TransactionType type, String idempotencyKey,
+    private static LedgerTransaction move(TransactionType type, String idempotencyKey, String requestHash,
                                           Account from, Account to, BigDecimal amount) {
         BigDecimal normalized = normalize(amount);
-        LedgerTransaction tx = new LedgerTransaction(type, idempotencyKey);
+        LedgerTransaction tx = new LedgerTransaction(type, idempotencyKey, requestHash);
         tx.post(from, EntryDirection.DEBIT, normalized);
         tx.post(to, EntryDirection.CREDIT, normalized);
         tx.complete();
