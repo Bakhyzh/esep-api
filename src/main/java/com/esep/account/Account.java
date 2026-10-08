@@ -51,6 +51,10 @@ public class Account {
     @Column(nullable = false, length = 10)
     private AccountStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10, updatable = false)
+    private AccountType type;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -63,9 +67,35 @@ public class Account {
         this.currency = currency;
         this.balance = BigDecimal.ZERO.setScale(4);
         this.status = AccountStatus.ACTIVE;
+        this.type = AccountType.USER;
+    }
+
+    /**
+     * Money leaves the account. Call it only from a ledger posting,
+     * so the balance always matches the sum of ledger entries.
+     */
+    public void debit(BigDecimal amount) {
+        requireActive();
+        if (type == AccountType.USER && balance.compareTo(amount) < 0) {
+            throw new BusinessRuleException("Insufficient funds on account " + id);
+        }
+        this.balance = balance.subtract(amount);
+    }
+
+    /** Money enters the account. Same rule as debit: only via a ledger posting. */
+    public void credit(BigDecimal amount) {
+        requireActive();
+        this.balance = balance.add(amount);
+    }
+
+    public boolean isSystem() {
+        return type == AccountType.SYSTEM;
     }
 
     public void close() {
+        if (isSystem()) {
+            throw new BusinessRuleException("System account " + id + " cannot be closed");
+        }
         if (status == AccountStatus.CLOSED) {
             throw new BusinessRuleException("Account " + id + " is already closed");
         }
@@ -75,5 +105,11 @@ public class Account {
         }
         this.status = AccountStatus.CLOSED;
         this.closedAt = Instant.now();
+    }
+
+    private void requireActive() {
+        if (status != AccountStatus.ACTIVE) {
+            throw new BusinessRuleException("Account " + id + " is closed");
+        }
     }
 }
