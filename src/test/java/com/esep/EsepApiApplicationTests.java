@@ -1,13 +1,12 @@
 package com.esep;
 
+import com.esep.support.IntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class EsepApiApplicationTests {
+// context starts, Flyway applies all migrations, Hibernate validates entities against the schema
+class EsepApiApplicationTests extends IntegrationTest {
 
-	@Test
-	void contextLoads() {
-	}
-
+    @Test
+    void contextLoads() {
+    }
 }

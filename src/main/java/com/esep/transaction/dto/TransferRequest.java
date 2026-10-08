@@ -1,5 +1,7 @@
 package com.esep.transaction.dto;
 
+import com.esep.transaction.RequestFingerprint;
+import com.esep.transaction.TransactionType;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -17,4 +19,8 @@ public record TransferRequest(
         @NotNull @Positive @Digits(integer = 15, fraction = 4)
         BigDecimal amount
 ) {
+
+    public String fingerprint() {
+        return RequestFingerprint.of(TransactionType.TRANSFER, fromAccountId, toAccountId, amount);
+    }
 }

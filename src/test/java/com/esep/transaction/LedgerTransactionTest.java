@@ -19,7 +19,7 @@ class LedgerTransactionTest {
         Account from = userAccount(1, KZT, "150.0000");
         Account to = userAccount(2, KZT, "10.0000");
 
-        LedgerTransaction tx = LedgerTransaction.transfer("key-1", from, to, new BigDecimal("100"));
+        LedgerTransaction tx = LedgerTransaction.transfer("key-1", "hash", from, to, new BigDecimal("100"));
 
         assertThat(tx.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
         assertThat(tx.getType()).isEqualTo(TransactionType.TRANSFER);
@@ -38,7 +38,7 @@ class LedgerTransactionTest {
         Account from = userAccount(1, KZT, "100.0000");
         Account to = userAccount(2, KZT, "0.0000");
 
-        LedgerTransaction tx = LedgerTransaction.transfer("key-1", from, to, new BigDecimal("12.5"));
+        LedgerTransaction tx = LedgerTransaction.transfer("key-1", "hash", from, to, new BigDecimal("12.5"));
 
         assertThat(tx.getEntries()).allSatisfy(e -> assertThat(e.getAmount()).hasToString("12.5000"));
     }
@@ -48,7 +48,7 @@ class LedgerTransactionTest {
         Account from = userAccount(1, KZT, "99.9999");
         Account to = userAccount(2, KZT, "0.0000");
 
-        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", from, to, new BigDecimal("100")))
+        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", "hash", from, to, new BigDecimal("100")))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("Insufficient funds");
         assertThat(from.getBalance()).isEqualByComparingTo("99.9999");
@@ -60,7 +60,7 @@ class LedgerTransactionTest {
         Account from = userAccount(1, KZT, "100.0000");
         Account to = userAccount(2, KZT, "0.0000");
 
-        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", from, to, new BigDecimal("0.00001")))
+        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", "hash", from, to, new BigDecimal("0.00001")))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("decimal places");
     }
@@ -70,9 +70,9 @@ class LedgerTransactionTest {
         Account from = userAccount(1, KZT, "100.0000");
         Account to = userAccount(2, KZT, "0.0000");
 
-        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", from, to, BigDecimal.ZERO))
+        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", "hash", from, to, BigDecimal.ZERO))
                 .isInstanceOf(BusinessRuleException.class);
-        assertThatThrownBy(() -> LedgerTransaction.transfer("key-2", from, to, new BigDecimal("-5")))
+        assertThatThrownBy(() -> LedgerTransaction.transfer("key-2", "hash", from, to, new BigDecimal("-5")))
                 .isInstanceOf(BusinessRuleException.class);
     }
 
@@ -82,7 +82,7 @@ class LedgerTransactionTest {
         Account to = userAccount(2, KZT, "0.0000");
         to.close();
 
-        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", from, to, new BigDecimal("10")))
+        assertThatThrownBy(() -> LedgerTransaction.transfer("key-1", "hash", from, to, new BigDecimal("10")))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("closed");
     }
@@ -92,7 +92,7 @@ class LedgerTransactionTest {
         Account funding = systemAccount(100, KZT);
         Account target = userAccount(1, KZT, "0.0000");
 
-        LedgerTransaction tx = LedgerTransaction.deposit("key-1", funding, target, new BigDecimal("500"));
+        LedgerTransaction tx = LedgerTransaction.deposit("key-1", "hash", funding, target, new BigDecimal("500"));
 
         assertThat(tx.getType()).isEqualTo(TransactionType.DEPOSIT);
         assertThat(funding.getBalance()).isEqualByComparingTo("-500");

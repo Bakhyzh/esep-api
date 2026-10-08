@@ -7,9 +7,10 @@ import java.util.Optional;
 
 public interface LedgerTransactionRepository extends JpaRepository<LedgerTransaction, Long> {
 
-    boolean existsByIdempotencyKey(String idempotencyKey);
-
     // load entries in the same query: no LazyInitializationException, no N+1
     @EntityGraph(attributePaths = "entries")
     Optional<LedgerTransaction> findWithEntriesById(Long id);
+
+    @EntityGraph(attributePaths = "entries")
+    Optional<LedgerTransaction> findWithEntriesByIdempotencyKey(String idempotencyKey);
 }

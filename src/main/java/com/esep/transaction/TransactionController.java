@@ -2,6 +2,7 @@ package com.esep.transaction;
 
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
+import com.esep.transaction.dto.TransactionResult;
 import com.esep.transaction.dto.TransferRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -25,6 +26,7 @@ import java.net.URI;
 public class TransactionController {
 
     static final String IDEMPOTENCY_KEY = "Idempotency-Key";
+    static final String IDEMPOTENT_REPLAYED = "Idempotent-Replayed";
 
     private final TransactionService transactionService;
 
@@ -47,7 +49,12 @@ public class TransactionController {
         return transactionService.getById(id);
     }
 
-    private static ResponseEntity<TransactionResponse> created(TransactionResponse body) {
+    // first call -> 201 Created; repeated call with the same key -> 200 OK with the saved result
+    private static ResponseEntity<TransactionResponse> created(TransactionResult result) {
+        TransactionResponse body = result.response();
+        if (result.replayed()) {
+            return ResponseEntity.ok().header(IDEMPOTENT_REPLAYED, "true").body(body);
+        }
         URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/api/transactions/{id}")
                 .buildAndExpand(body.id())
