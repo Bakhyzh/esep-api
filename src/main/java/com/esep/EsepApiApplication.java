@@ -1,4 +1,4 @@
-package com.esep.esep_api;
+package com.esep;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

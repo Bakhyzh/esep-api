@@ -1,4 +1,4 @@
-package com.esep.esep_api;
+package com.esep;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
