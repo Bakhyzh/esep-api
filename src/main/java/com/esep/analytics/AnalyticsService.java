@@ -28,17 +28,24 @@ public class AnalyticsService {
     static final int MAX_DAYS = 366;
 
     private final AnalyticsRepository repository;
+    private final AnalyticsCache cache;
 
     public List<SpendingPoint> spending(CurrentUser currentUser, ReportRequest request, Period period) {
-        return repository.spendingByPeriod(scope(currentUser, request), period);
+        ReportScope scope = scope(currentUser, request);
+        return cache.getOrLoad(scope.userId(), "spending", cacheParams(scope, period), SpendingPoint.class,
+                () -> repository.spendingByPeriod(scope, period));
     }
 
     public List<TopTransaction> top(CurrentUser currentUser, ReportRequest request, int limit) {
-        return repository.topTransactions(scope(currentUser, request), limit);
+        ReportScope scope = scope(currentUser, request);
+        return cache.getOrLoad(scope.userId(), "top", cacheParams(scope, limit), TopTransaction.class,
+                () -> repository.topTransactions(scope, limit));
     }
 
     public List<MovingAveragePoint> movingAverage(CurrentUser currentUser, ReportRequest request, int window) {
-        return repository.movingAverage(scope(currentUser, request), window);
+        ReportScope scope = scope(currentUser, request);
+        return cache.getOrLoad(scope.userId(), "moving-average", cacheParams(scope, window), MovingAveragePoint.class,
+                () -> repository.movingAverage(scope, window));
     }
 
     public List<MonthlyComparison> monthlyComparison(CurrentUser currentUser, Long userId, String currency,
@@ -46,8 +53,17 @@ public class AnalyticsService {
         ZoneId validZone = requireRegionZone(zone);
         YearMonth lastMonth = until != null ? until : YearMonth.now(validZone);
         YearMonth firstMonth = lastMonth.minusMonths(months - 1L);
-        return repository.monthlyComparison(new ReportScope(owner(currentUser, userId), currency,
-                firstMonth.atDay(1), lastMonth.atEndOfMonth(), validZone));
+        ReportScope scope = new ReportScope(owner(currentUser, userId), currency,
+                firstMonth.atDay(1), lastMonth.atEndOfMonth(), validZone);
+        return cache.getOrLoad(scope.userId(), "monthly", cacheParams(scope, months), MonthlyComparison.class,
+                () -> repository.monthlyComparison(scope));
+    }
+
+    // built from the RESOLVED scope (defaults applied): "last 30 days" asked today and tomorrow
+    // are different keys, so a default range never serves yesterday's window
+    private static String cacheParams(ReportScope scope, Object extra) {
+        return String.join(":", scope.currency(), scope.fromDay().toString(), scope.toDay().toString(),
+                scope.zone().getId(), String.valueOf(extra));
     }
 
     private ReportScope scope(CurrentUser currentUser, ReportRequest request) {

@@ -5,6 +5,7 @@ import com.esep.analytics.AnalyticsService.ReportRequest;
 import com.esep.common.exception.InvalidRequestException;
 import com.esep.security.CurrentUser;
 import com.esep.user.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -17,10 +18,14 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -35,8 +40,17 @@ class AnalyticsServiceTest {
     @Mock
     private AnalyticsRepository repository;
 
+    @Mock
+    private AnalyticsCache cache;
+
     @InjectMocks
     private AnalyticsService service;
+
+    @BeforeEach
+    void cacheAlwaysMisses() {
+        lenient().when(cache.getOrLoad(anyLong(), anyString(), anyString(), any(), any()))
+                .thenAnswer(inv -> inv.<Supplier<?>>getArgument(4).get());
+    }
 
     @Test
     void noDates_defaultsToLast30DaysOfTheCurrentUser() {
@@ -109,5 +123,14 @@ class AnalyticsServiceTest {
         ArgumentCaptor<ReportScope> captor = ArgumentCaptor.forClass(ReportScope.class);
         verify(repository).spendingByPeriod(captor.capture(), eq(Period.DAY));
         return captor.getValue();
+    }
+
+    @Test
+    void cacheKeyContainsResolvedDatesAndReportParameters() {
+        ReportRequest request = new ReportRequest(null, "KZT", LocalDate.parse("2026-03-01"), LocalDate.parse("2026-03-31"), ALMATY);
+
+        service.top(ME, request, 5);
+
+        verify(cache).getOrLoad(eq(1L), eq("top"), eq("KZT:2026-03-01:2026-03-31:Asia/Almaty:5"), any(), any());
     }
 }
