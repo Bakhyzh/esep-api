@@ -2,3 +2,8 @@ esep:
   security:
     jwt:
       secret: test-only-secret-0123456789abcdef0123456789
+  outbox:
+    poll-interval: 200ms
+  kafka:
+    retry:
+      interval: 200ms
