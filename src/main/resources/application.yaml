@@ -1,6 +1,8 @@
 spring:
   application:
     name: esep-api
+  profiles:
+    default: dev
 
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/esep}

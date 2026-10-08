@@ -1,0 +1,52 @@
+package com.esep.account;
+
+import com.esep.account.dto.AccountResponse;
+import com.esep.account.dto.CreateAccountRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/accounts")
+@RequiredArgsConstructor
+public class AccountController {
+
+    private final AccountService accountService;
+
+    @PostMapping
+    public ResponseEntity<AccountResponse> create(@Valid @RequestBody CreateAccountRequest request) {
+        AccountResponse created = accountService.create(request);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
+    }
+
+    @GetMapping("/{id}")
+    public AccountResponse getById(@PathVariable Long id) {
+        return accountService.getById(id);
+    }
+
+    // temporary: in stage 5 this becomes "my accounts" based on the JWT
+    @GetMapping
+    public List<AccountResponse> getByUser(@RequestParam Long userId) {
+        return accountService.getByUser(userId);
+    }
+
+    @PostMapping("/{id}/close")
+    public AccountResponse close(@PathVariable Long id) {
+        return accountService.close(id);
+    }
+}
