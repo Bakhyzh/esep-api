@@ -5,10 +5,12 @@ import com.esep.account.dto.CreateAccountRequest;
 import com.esep.common.exception.BusinessRuleException;
 import com.esep.common.exception.ConflictException;
 import com.esep.common.exception.ResourceNotFoundException;
+import com.esep.security.CurrentUser;
 import com.esep.user.User;
 import com.esep.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +26,10 @@ public class AccountService {
     private final UserRepository userRepository;
 
     @Transactional
-    public AccountResponse create(CreateAccountRequest request) {
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User", request.userId()));
+    public AccountResponse create(CurrentUser currentUser, CreateAccountRequest request) {
+        // a valid token can outlive its user (deleted after login), so the user is still looked up
+        User user = userRepository.findById(currentUser.id())
+                .orElseThrow(() -> new ResourceNotFoundException("User", currentUser.id()));
         Currency currency = parseCurrency(request.currency());
 
         // fast path: a friendly error in the common case
@@ -44,26 +47,37 @@ public class AccountService {
         }
     }
 
-    public AccountResponse getById(Long id) {
-        return AccountResponse.from(findAccount(id));
+    public AccountResponse getById(CurrentUser currentUser, Long id) {
+        return AccountResponse.from(findAccessibleAccount(currentUser, id));
     }
 
-    public List<AccountResponse> getByUser(Long userId) {
-        return accountRepository.findAllByUser_IdOrderByIdAsc(userId).stream()
+    /** userId == null means "my accounts"; only an admin may list somebody else's. */
+    public List<AccountResponse> getByUser(CurrentUser currentUser, Long userId) {
+        Long ownerId = userId != null ? userId : currentUser.id();
+        if (!currentUser.canAccess(ownerId)) {
+            throw new AccessDeniedException("You can only list your own accounts");
+        }
+        return accountRepository.findAllByUser_IdOrderByIdAsc(ownerId).stream()
                 .map(AccountResponse::from)
                 .toList();
     }
 
     @Transactional
-    public AccountResponse close(Long id) {
-        Account account = findAccount(id);
+    public AccountResponse close(CurrentUser currentUser, Long id) {
+        Account account = findAccessibleAccount(currentUser, id);
         account.close();
         // no save() needed: the entity is managed, Hibernate flushes the change on commit (dirty checking)
         return AccountResponse.from(account);
     }
 
-    private Account findAccount(Long id) {
+    /**
+     * Somebody else's account answers 404, not 403: a 403 would confirm that the id exists
+     * and let an attacker enumerate accounts.
+     */
+    private Account findAccessibleAccount(CurrentUser currentUser, Long id) {
         return accountRepository.findById(id)
+                // getUser().getId() on a lazy proxy does not query the users table
+                .filter(account -> currentUser.canAccess(account.getUser().getId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Account", id));
     }
 

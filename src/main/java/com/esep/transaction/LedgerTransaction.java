@@ -2,14 +2,18 @@ package com.esep.transaction;
 
 import com.esep.account.Account;
 import com.esep.common.exception.BusinessRuleException;
+import com.esep.user.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -58,6 +62,11 @@ public class LedgerTransaction {
     @Column(name = "request_hash", nullable = false, length = 64, updatable = false)
     private String requestHash;
 
+    /** Who initiated it; Idempotency-Key is unique per this user. */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "created_by", nullable = false, updatable = false)
+    private User createdBy;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -66,32 +75,33 @@ public class LedgerTransaction {
     @OneToMany(mappedBy = "transaction", cascade = CascadeType.PERSIST)
     private List<LedgerEntry> entries = new ArrayList<>();
 
-    private LedgerTransaction(TransactionType type, String idempotencyKey, String requestHash) {
+    private LedgerTransaction(TransactionType type, User createdBy, String idempotencyKey, String requestHash) {
         this.type = type;
+        this.createdBy = createdBy;
         this.idempotencyKey = idempotencyKey;
         this.requestHash = requestHash;
         this.status = TransactionStatus.PENDING;
     }
 
-    public static LedgerTransaction transfer(String idempotencyKey, String requestHash,
+    public static LedgerTransaction transfer(User createdBy, String idempotencyKey, String requestHash,
                                              Account from, Account to, BigDecimal amount) {
-        return move(TransactionType.TRANSFER, idempotencyKey, requestHash, from, to, amount);
+        return move(TransactionType.TRANSFER, createdBy, idempotencyKey, requestHash, from, to, amount);
     }
 
     /** Money comes from the outside world: the system funding account is debited. */
-    public static LedgerTransaction deposit(String idempotencyKey, String requestHash,
+    public static LedgerTransaction deposit(User createdBy, String idempotencyKey, String requestHash,
                                             Account funding, Account target, BigDecimal amount) {
-        return move(TransactionType.DEPOSIT, idempotencyKey, requestHash, funding, target, amount);
+        return move(TransactionType.DEPOSIT, createdBy, idempotencyKey, requestHash, funding, target, amount);
     }
 
     public List<LedgerEntry> getEntries() {
         return Collections.unmodifiableList(entries);
     }
 
-    private static LedgerTransaction move(TransactionType type, String idempotencyKey, String requestHash,
-                                          Account from, Account to, BigDecimal amount) {
+    private static LedgerTransaction move(TransactionType type, User createdBy, String idempotencyKey,
+                                          String requestHash, Account from, Account to, BigDecimal amount) {
         BigDecimal normalized = normalize(amount);
-        LedgerTransaction tx = new LedgerTransaction(type, idempotencyKey, requestHash);
+        LedgerTransaction tx = new LedgerTransaction(type, createdBy, idempotencyKey, requestHash);
         tx.post(from, EntryDirection.DEBIT, normalized);
         tx.post(to, EntryDirection.CREDIT, normalized);
         tx.complete();

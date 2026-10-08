@@ -26,3 +26,11 @@ spring:
 
 server:
   port: ${SERVER_PORT:8081}
+
+esep:
+  security:
+    jwt:
+      # no default on purpose: the app must not start in prod with a well-known key
+      secret: ${JWT_SECRET:}
+      issuer: esep-api
+      ttl: 1h

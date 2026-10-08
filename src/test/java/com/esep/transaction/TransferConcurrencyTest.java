@@ -3,6 +3,7 @@ package com.esep.transaction;
 import com.esep.account.Account;
 import com.esep.account.AccountRepository;
 import com.esep.common.exception.BusinessRuleException;
+import com.esep.security.CurrentUser;
 import com.esep.support.IntegrationTest;
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResult;
@@ -11,14 +12,18 @@ import com.esep.user.Role;
 import com.esep.user.User;
 import com.esep.user.UserRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Currency;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -34,6 +39,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TransferConcurrencyTest extends IntegrationTest {
 
     private static final Currency KZT = Currency.getInstance("KZT");
+    private static final Currency USD = Currency.getInstance("USD");
+    private static final Currency EUR = Currency.getInstance("EUR");
     private static final int THREADS = 32;
 
     @Autowired
@@ -46,6 +53,13 @@ class TransferConcurrencyTest extends IntegrationTest {
     private JdbcTemplate jdbc;
 
     private final ExecutorService pool = Executors.newFixedThreadPool(THREADS);
+    private final Map<Long, CurrentUser> ownerByAccount = new HashMap<>();
+    private CurrentUser admin;
+
+    @BeforeEach
+    void createAdmin() {
+        admin = currentUser(newUser(Role.ADMIN));
+    }
 
     @AfterEach
     void shutdownPool() {
@@ -69,9 +83,10 @@ class TransferConcurrencyTest extends IntegrationTest {
             }
             // amounts up to 400 on balances of 1000: some transfers must be rejected
             TransferRequest request = new TransferRequest(from, to, new BigDecimal(1 + random.nextInt(400) + ".25"));
+            CurrentUser owner = ownerByAccount.get(from);
             tasks.add(() -> {
                 try {
-                    transactionService.transfer(UUID.randomUUID().toString(), request);
+                    transactionService.transfer(owner, UUID.randomUUID().toString(), request);
                     succeeded.incrementAndGet();
                 } catch (BusinessRuleException e) {
                     assertThat(e).hasMessageContaining("Insufficient funds");
@@ -98,11 +113,13 @@ class TransferConcurrencyTest extends IntegrationTest {
         List<Callable<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             // half A->B, half B->A at the same time: the classic deadlock scenario without lock ordering
-            TransferRequest request = i % 2 == 0
+            boolean aToB = i % 2 == 0;
+            TransferRequest request = aToB
                     ? new TransferRequest(a, b, new BigDecimal("10"))
                     : new TransferRequest(b, a, new BigDecimal("10"));
+            CurrentUser owner = ownerByAccount.get(aToB ? a : b);
             tasks.add(() -> {
-                transactionService.transfer(UUID.randomUUID().toString(), request);
+                transactionService.transfer(owner, UUID.randomUUID().toString(), request);
                 return null;
             });
         }
@@ -119,12 +136,13 @@ class TransferConcurrencyTest extends IntegrationTest {
         List<Long> ids = createFundedAccounts(2, "1000");
         String key = "same-" + UUID.randomUUID();
         TransferRequest request = new TransferRequest(ids.get(0), ids.get(1), new BigDecimal("100"));
-        List<TransactionResult> results = java.util.Collections.synchronizedList(new ArrayList<>());
+        CurrentUser owner = ownerByAccount.get(ids.get(0));
+        List<TransactionResult> results = Collections.synchronizedList(new ArrayList<>());
 
         List<Callable<Void>> tasks = new ArrayList<>();
         for (int i = 0; i < 20; i++) {
             tasks.add(() -> {
-                results.add(transactionService.transfer(key, request));
+                results.add(transactionService.transfer(owner, key, request));
                 return null;
             });
         }
@@ -141,19 +159,25 @@ class TransferConcurrencyTest extends IntegrationTest {
     }
 
     @Test
-    void sameIdempotencyKeyForDifferentRequestsInParallel_onlyOneWins() throws Exception {
-        // different account pairs do not wait on each other's locks, so only the UNIQUE index stops the race
-        List<Long> ids = createFundedAccounts(10, "100");
+    void sameUserSameKeyForDifferentRequestsInParallel_onlyOneWins() throws Exception {
+        // one user, three accounts in different currencies -> three transfers that do not share locks,
+        // so only the UNIQUE (created_by, idempotency_key) index can stop the race
+        User sender = newUser(Role.USER);
+        List<Long> ids = new ArrayList<>();
+        List<Callable<Void>> tasks = new ArrayList<>();
         String key = "race-" + UUID.randomUUID();
         AtomicInteger succeeded = new AtomicInteger();
         AtomicInteger rejected = new AtomicInteger();
 
-        List<Callable<Void>> tasks = new ArrayList<>();
-        for (int i = 0; i < 10; i += 2) {
-            TransferRequest request = new TransferRequest(ids.get(i), ids.get(i + 1), new BigDecimal("10"));
+        for (Currency currency : List.of(KZT, USD, EUR)) {
+            long from = fundedAccount(sender, currency, "100");
+            long to = fundedAccount(newUser(Role.USER), currency, "100");
+            ids.add(from);
+            ids.add(to);
+            TransferRequest request = new TransferRequest(from, to, new BigDecimal("10"));
             tasks.add(() -> {
                 try {
-                    transactionService.transfer(key, request);
+                    transactionService.transfer(currentUser(sender), key, request);
                     succeeded.incrementAndGet();
                 } catch (BusinessRuleException e) {
                     assertThat(e).hasMessageContaining("different request");
@@ -166,9 +190,23 @@ class TransferConcurrencyTest extends IntegrationTest {
         runAllAtOnce(tasks);
 
         assertThat(succeeded.get()).isEqualTo(1);
-        assertThat(rejected.get()).isEqualTo(4);
-        assertThat(totalBalance(ids)).isEqualByComparingTo("1000");
+        assertThat(rejected.get()).isEqualTo(2);
         assertLedgerIsConsistent(ids);
+    }
+
+    @Test
+    void sameKeyUsedByDifferentUsers_doesNotConflict() {
+        List<Long> ids = createFundedAccounts(2, "100");
+        String key = "shared-" + UUID.randomUUID();
+
+        TransactionResult first = transactionService.transfer(
+                ownerByAccount.get(ids.get(0)), key, new TransferRequest(ids.get(0), ids.get(1), new BigDecimal("10")));
+        TransactionResult second = transactionService.transfer(
+                ownerByAccount.get(ids.get(1)), key, new TransferRequest(ids.get(1), ids.get(0), new BigDecimal("10")));
+
+        assertThat(first.replayed()).isFalse();
+        assertThat(second.replayed()).isFalse();
+        assertThat(second.response().id()).isNotEqualTo(first.response().id());
     }
 
     // --- helpers ---
@@ -189,16 +227,29 @@ class TransferConcurrencyTest extends IntegrationTest {
         }
     }
 
+    /** One user per account: a user may have only one active account per currency. */
     private List<Long> createFundedAccounts(int count, String initialBalance) {
         List<Long> ids = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            User user = userRepository.save(new User(UUID.randomUUID() + "@test.esep", "hash", Role.USER));
-            Account account = accountRepository.save(new Account(user, KZT));
-            transactionService.deposit(UUID.randomUUID().toString(),
-                    new DepositRequest(account.getId(), new BigDecimal(initialBalance)));
-            ids.add(account.getId());
+            ids.add(fundedAccount(newUser(Role.USER), KZT, initialBalance));
         }
         return ids;
+    }
+
+    private long fundedAccount(User owner, Currency currency, String initialBalance) {
+        Account account = accountRepository.save(new Account(owner, currency));
+        transactionService.deposit(admin, UUID.randomUUID().toString(),
+                new DepositRequest(account.getId(), new BigDecimal(initialBalance)));
+        ownerByAccount.put(account.getId(), currentUser(owner));
+        return account.getId();
+    }
+
+    private User newUser(Role role) {
+        return userRepository.save(new User(UUID.randomUUID() + "@test.esep", "hash", role));
+    }
+
+    private static CurrentUser currentUser(User user) {
+        return new CurrentUser(user.getId(), user.getRole());
     }
 
     private BigDecimal balance(long accountId) {

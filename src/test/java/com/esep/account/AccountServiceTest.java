@@ -5,6 +5,7 @@ import com.esep.account.dto.CreateAccountRequest;
 import com.esep.common.exception.BusinessRuleException;
 import com.esep.common.exception.ConflictException;
 import com.esep.common.exception.ResourceNotFoundException;
+import com.esep.security.CurrentUser;
 import com.esep.user.Role;
 import com.esep.user.User;
 import com.esep.user.UserRepository;
@@ -14,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -31,6 +33,9 @@ import static org.mockito.Mockito.when;
 class AccountServiceTest {
 
     private static final Currency KZT = Currency.getInstance("KZT");
+    private static final CurrentUser ME = new CurrentUser(1L, Role.USER);
+    private static final CurrentUser OTHER = new CurrentUser(2L, Role.USER);
+    private static final CurrentUser ADMIN = new CurrentUser(99L, Role.ADMIN);
 
     @Mock
     private AccountRepository accountRepository;
@@ -48,7 +53,7 @@ class AccountServiceTest {
         when(accountRepository.existsByUser_IdAndCurrencyAndStatus(1L, KZT, AccountStatus.ACTIVE)).thenReturn(false);
         when(accountRepository.saveAndFlush(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        AccountResponse response = accountService.create(new CreateAccountRequest(1L, "KZT"));
+        AccountResponse response = accountService.create(ME, new CreateAccountRequest("KZT"));
 
         assertThat(response.userId()).isEqualTo(1L);
         assertThat(response.currency()).isEqualTo("KZT");
@@ -58,9 +63,9 @@ class AccountServiceTest {
 
     @Test
     void create_unknownUser_throwsNotFound() {
-        when(userRepository.findById(42L)).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> accountService.create(new CreateAccountRequest(42L, "KZT")))
+        assertThatThrownBy(() -> accountService.create(ME, new CreateAccountRequest("KZT")))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(accountRepository, never()).saveAndFlush(any());
     }
@@ -69,7 +74,7 @@ class AccountServiceTest {
     void create_unknownCurrency_throwsBusinessRule() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
 
-        assertThatThrownBy(() -> accountService.create(new CreateAccountRequest(1L, "ABC")))
+        assertThatThrownBy(() -> accountService.create(ME, new CreateAccountRequest("ABC")))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("ABC");
     }
@@ -79,7 +84,7 @@ class AccountServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
         when(accountRepository.existsByUser_IdAndCurrencyAndStatus(1L, KZT, AccountStatus.ACTIVE)).thenReturn(true);
 
-        assertThatThrownBy(() -> accountService.create(new CreateAccountRequest(1L, "KZT")))
+        assertThatThrownBy(() -> accountService.create(ME, new CreateAccountRequest("KZT")))
                 .isInstanceOf(ConflictException.class);
         verify(accountRepository, never()).saveAndFlush(any());
     }
@@ -91,7 +96,7 @@ class AccountServiceTest {
         when(accountRepository.saveAndFlush(any(Account.class)))
                 .thenThrow(new DataIntegrityViolationException("ux_accounts_user_currency_active"));
 
-        assertThatThrownBy(() -> accountService.create(new CreateAccountRequest(1L, "KZT")))
+        assertThatThrownBy(() -> accountService.create(ME, new CreateAccountRequest("KZT")))
                 .isInstanceOf(ConflictException.class);
     }
 
@@ -100,7 +105,7 @@ class AccountServiceTest {
         Account account = new Account(user(1L), KZT);
         when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
 
-        AccountResponse response = accountService.close(10L);
+        AccountResponse response = accountService.close(ME, 10L);
 
         assertThat(response.status()).isEqualTo(AccountStatus.CLOSED);
         assertThat(response.closedAt()).isNotNull();
@@ -112,7 +117,7 @@ class AccountServiceTest {
         ReflectionTestUtils.setField(account, "balance", new BigDecimal("0.0001"));
         when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
 
-        assertThatThrownBy(() -> accountService.close(10L))
+        assertThatThrownBy(() -> accountService.close(ME, 10L))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("non-zero balance");
     }
@@ -123,9 +128,54 @@ class AccountServiceTest {
         account.close();
         when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
 
-        assertThatThrownBy(() -> accountService.close(10L))
+        assertThatThrownBy(() -> accountService.close(ME, 10L))
                 .isInstanceOf(BusinessRuleException.class)
                 .hasMessageContaining("already closed");
+    }
+
+    @Test
+    void getById_somebodyElsesAccount_throwsNotFound() {
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(new Account(user(1L), KZT)));
+
+        assertThatThrownBy(() -> accountService.getById(OTHER, 10L))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void getById_admin_seesAnyAccount() {
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(new Account(user(1L), KZT)));
+
+        assertThat(accountService.getById(ADMIN, 10L).userId()).isEqualTo(1L);
+    }
+
+    @Test
+    void close_somebodyElsesAccount_throwsNotFoundAndKeepsItOpen() {
+        Account account = new Account(user(1L), KZT);
+        when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
+
+        assertThatThrownBy(() -> accountService.close(OTHER, 10L))
+                .isInstanceOf(ResourceNotFoundException.class);
+        assertThat(account.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+    }
+
+    @Test
+    void getByUser_withoutUserId_returnsOwnAccounts() {
+        accountService.getByUser(ME, null);
+
+        verify(accountRepository).findAllByUser_IdOrderByIdAsc(1L);
+    }
+
+    @Test
+    void getByUser_otherUserAsRegularUser_throwsAccessDenied() {
+        assertThatThrownBy(() -> accountService.getByUser(ME, 2L))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getByUser_otherUserAsAdmin_isAllowed() {
+        accountService.getByUser(ADMIN, 2L);
+
+        verify(accountRepository).findAllByUser_IdOrderByIdAsc(2L);
     }
 
     private static User user(Long id) {
