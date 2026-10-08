@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Esep API",
-    "description": "Wallets and transfers with a double-entry ledger.\n\nRun folders in order: Auth -> Accounts -> Transactions -> Security -> Errors.\nDev seed users (password `password123`): alice@esep.dev, bob@esep.dev (USER), admin@esep.dev (ADMIN).\nAuth/Login requests save JWTs to aliceToken, bobToken, adminToken; other requests use them as Bearer tokens.\nIdempotency keys are generated in pre-request scripts; the 'retry' request reuses the previous key on purpose.",
+    "description": "Wallets and transfers with a double-entry ledger.\n\nRun folders in order: Auth -> Accounts -> Transactions -> Analytics -> Security -> Errors (or Run collection).\nDev seed users (password `password123`): alice@esep.dev, bob@esep.dev (USER), admin@esep.dev (ADMIN).\nAuth/Login requests save JWTs to aliceToken, bobToken, adminToken; other requests use them as Bearer tokens.\nIdempotency keys are generated in pre-request scripts; the 'retry' request reuses the previous key on purpose.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -38,6 +38,10 @@
     {
       "key": "currency",
       "value": "KZT"
+    },
+    {
+      "key": "zone",
+      "value": "Asia/Almaty"
     },
     {
       "key": "aliceToken",
@@ -909,6 +913,323 @@
       ]
     },
     {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Spending by day",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/spending?currency={{currency}}&period=DAY&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "spending"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "period",
+                  "value": "DAY"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const today = pm.response.json().at(-1);",
+                  "pm.test(\"Today has spending after the transfer\", () => pm.expect(today.total).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Spending by month",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/spending?currency={{currency}}&period=MONTH&from=2026-01-01&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "spending"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "period",
+                  "value": "MONTH"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Top transactions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/top-transactions?currency={{currency}}&limit=5&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "top-transactions"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"First item has rank 1\", () => pm.expect(pm.response.json()[0].rank).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Moving average (7 days)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/moving-average?currency={{currency}}&window=7&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "moving-average"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "window",
+                  "value": "7"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"One point per day for the default 30 days\", () => pm.expect(pm.response.json()).to.have.length(30));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Monthly comparison (6 months)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/monthly-comparison?currency={{currency}}&months=6&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "monthly-comparison"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "months",
+                  "value": "6"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Six months\", () => pm.expect(pm.response.json()).to.have.length(6));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Admin: Bob's spending",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/spending?currency={{currency}}&userId={{bobUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "spending"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "userId",
+                  "value": "{{bobUserId}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Offset zone -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/spending?currency={{currency}}&zone=%2B05:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "spending"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "zone",
+                  "value": "%2B05:00"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Security",
       "item": [
         {
@@ -1136,6 +1457,45 @@
                 "accounts"
               ],
               "query": [
+                {
+                  "key": "userId",
+                  "value": "{{bobUserId}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Alice reads Bob's analytics -> 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/spending?currency={{currency}}&userId={{bobUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "spending"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
                 {
                   "key": "userId",
                   "value": "{{bobUserId}}"

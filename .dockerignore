@@ -1,0 +1,10 @@
+target/
+.git/
+.idea/
+*.iml
+.mvn/
+mvnw
+mvnw.cmd
+postman/
+docs/
+HELP.md

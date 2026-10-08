@@ -6,6 +6,8 @@ import com.esep.analytics.dto.MovingAveragePoint;
 import com.esep.analytics.dto.SpendingPoint;
 import com.esep.analytics.dto.TopTransaction;
 import com.esep.security.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -26,6 +28,7 @@ import java.util.List;
  * Spending reports of the current user (ADMIN may pass ?userId=).
  * from/to are calendar days (inclusive) in the given zone; default: the last 30 days.
  */
+@Tag(name = "Analytics", description = "Spending reports in one currency; dates are calendar days in the given time zone")
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
@@ -35,6 +38,7 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
+    @Operation(summary = "Spending grouped by DAY, WEEK or MONTH")
     @GetMapping("/spending")
     public List<SpendingPoint> spending(
             @AuthenticationPrincipal CurrentUser currentUser,
@@ -47,6 +51,7 @@ public class AnalyticsController {
         return analyticsService.spending(currentUser, new ReportRequest(userId, currency, from, to, zone), period);
     }
 
+    @Operation(summary = "Largest outgoing transfers (DENSE_RANK)")
     @GetMapping("/top-transactions")
     public List<TopTransaction> topTransactions(
             @AuthenticationPrincipal CurrentUser currentUser,
@@ -59,6 +64,7 @@ public class AnalyticsController {
         return analyticsService.top(currentUser, new ReportRequest(userId, currency, from, to, zone), limit);
     }
 
+    @Operation(summary = "Daily spending with a moving average over N calendar days")
     @GetMapping("/moving-average")
     public List<MovingAveragePoint> movingAverage(
             @AuthenticationPrincipal CurrentUser currentUser,
@@ -71,6 +77,7 @@ public class AnalyticsController {
         return analyticsService.movingAverage(currentUser, new ReportRequest(userId, currency, from, to, zone), window);
     }
 
+    @Operation(summary = "Monthly totals compared with the previous month (LAG)")
     @GetMapping("/monthly-comparison")
     public List<MonthlyComparison> monthlyComparison(
             @AuthenticationPrincipal CurrentUser currentUser,

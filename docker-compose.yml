@@ -16,5 +16,23 @@ services:
       timeout: 3s
       retries: 10
 
+  app:
+    build: .
+    container_name: esep-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # inside the compose network the database host is the service name, not localhost
+      DB_URL: jdbc:postgresql://postgres:5432/esep
+      DB_USERNAME: esep
+      DB_PASSWORD: esep
+      # dev = demo users from the seed migration; for anything real use a non-dev profile
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      # demo default only; pass your own: JWT_SECRET=... docker compose up
+      JWT_SECRET: ${JWT_SECRET:-docker-demo-secret-change-me-0123456789abcdef}
+    ports:
+      - "${APP_PORT:-8081}:8081"
+
 volumes:
   esep-pgdata:
