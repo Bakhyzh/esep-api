@@ -4,6 +4,7 @@ import com.esep.account.Account;
 import com.esep.account.AccountRepository;
 import com.esep.common.exception.BusinessRuleException;
 import com.esep.common.exception.ResourceNotFoundException;
+import com.esep.outbox.TransferEventWriter;
 import com.esep.security.CurrentUser;
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResult;
@@ -16,6 +17,7 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.util.Currency;
@@ -52,6 +54,12 @@ class TransactionProcessorTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TransferEventWriter transferEventWriter;
+
+    @Mock
+    private ApplicationEventPublisher applicationEvents;
+
     @InjectMocks
     private TransactionProcessor processor;
 
@@ -65,6 +73,8 @@ class TransactionProcessorTest {
 
         assertThat(result.replayed()).isFalse();
         assertThat(result.response().status()).isEqualTo(TransactionStatus.COMPLETED);
+        verify(transferEventWriter).transferCompleted(any(LedgerTransaction.class), any(Account.class), any(Account.class));
+        verify(applicationEvents).publishEvent(any(TransferCommittedEvent.class));
         assertThat(result.response().entries())
                 .extracting(e -> e.accountId(), e -> e.direction())
                 .containsExactly(tuple(1L, EntryDirection.DEBIT), tuple(2L, EntryDirection.CREDIT));
@@ -106,6 +116,7 @@ class TransactionProcessorTest {
         assertThat(result.replayed()).isTrue();
         assertThat(from.getBalance()).isEqualByComparingTo("60");   // money moved only once
         verify(transactionRepository, never()).save(any());
+        verify(transferEventWriter, never()).transferCompleted(any(), any(), any()); // no second notification
     }
 
     @Test

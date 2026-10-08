@@ -4,6 +4,7 @@ import com.esep.account.Account;
 import com.esep.account.AccountRepository;
 import com.esep.common.exception.BusinessRuleException;
 import com.esep.common.exception.ResourceNotFoundException;
+import com.esep.outbox.TransferEventWriter;
 import com.esep.security.CurrentUser;
 import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
@@ -12,6 +13,7 @@ import com.esep.transaction.dto.TransferRequest;
 import com.esep.user.User;
 import com.esep.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,8 @@ public class TransactionProcessor {
     private final LedgerTransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final TransferEventWriter transferEventWriter;
+    private final ApplicationEventPublisher applicationEvents;
 
     /** Money can be sent only from your own account (an admin too), to any account. */
     @Transactional
@@ -68,9 +72,15 @@ public class TransactionProcessor {
         }
 
         // 3. balances are checked on locked, fresh rows: nobody can change them until we commit
-        LedgerTransaction tx = LedgerTransaction.transfer(
-                creator(currentUser), idempotencyKey, requestHash, from, to, request.amount());
-        return TransactionResult.created(TransactionResponse.from(transactionRepository.save(tx)));
+        LedgerTransaction tx = transactionRepository.save(LedgerTransaction.transfer(
+                creator(currentUser), idempotencyKey, requestHash, from, to, request.amount()));
+
+        // 4. outbox row in the SAME transaction: the notification is sent if and only if the transfer commits
+        transferEventWriter.transferCompleted(tx, from, to);
+        // in-process event for cache invalidation, delivered only after a successful commit
+        applicationEvents.publishEvent(
+                new TransferCommittedEvent(tx.getId(), from.getUser().getId(), to.getUser().getId()));
+        return TransactionResult.created(TransactionResponse.from(tx));
     }
 
     /** ADMIN only, enforced by the URL rule in SecurityConfig. */
