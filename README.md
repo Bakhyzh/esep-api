@@ -1,6 +1,6 @@
 # Esep API
 
-[![CI](https://github.com/Bakhyzh/esep-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Bakhyzh/esep-api/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Bakhyzh/esep-api/actions/workflows/deploy.yml/badge.svg)](https://github.com/Bakhyzh/esep-api/actions/workflows/deploy.yml)
 
 Wallets and money transfers on a **double-entry ledger**, with JWT security, SQL spending analytics,
 a Redis report cache and Kafka notifications through a Transactional Outbox.
@@ -10,6 +10,14 @@ money precision, race conditions, deadlocks, duplicate requests, lost events and
 **Stack:** Java 21 · Spring Boot 4.1 · Spring Data JPA (Hibernate 7) · PostgreSQL 17 · Flyway ·
 Spring Security (JWT resource server) · Redis · Kafka (KRaft) · springdoc OpenAPI · JUnit 5 · Mockito ·
 Testcontainers · Docker Compose · GitHub Actions
+
+## Live demo
+
+- Frontend: _TODO: https://bakhyzh.github.io/esep-web/_
+- API health: _TODO: https://api.example.com/actuator/health_
+- Demo login: _TODO: shared on request_
+
+Deployment (VPS + Docker Compose + Caddy, GitHub Actions): [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Quick start
 
@@ -176,6 +184,18 @@ Schema changes only through Flyway migrations (`ddl-auto: validate`):
 - Users see and spend only their own accounts. Somebody else's resource answers **404, not 403**,
   so ids cannot be enumerated. Deposits are ADMIN-only.
 - 401/403 from security filters are rendered as the same `application/problem+json` as all other errors.
+- **Rate limit** on `POST /api/auth/login` and `/api/auth/register`: 10 requests per minute per client IP,
+  separately per endpoint (fixed window in Redis, one atomic Lua script: `INCR` + `PEXPIRE`).
+  Over the limit → `429` with `Retry-After` and code `RATE_LIMITED`. If Redis is down the limiter
+  fails open (logged), so a cache outage does not lock everybody out.
+
+### Production profile (`prod`)
+- Secrets (`JWT_SECRET`, `DB_PASSWORD`, ...) only from the environment, **no defaults**: a missing one stops the app.
+- Swagger UI and `/v3/api-docs` off; actuator exposes only `health` without details.
+- Graceful shutdown (in-flight requests get up to 20 s), no stack traces in error responses.
+- Behind Caddy: `X-Forwarded-*` trusted only from the internal Docker network, so the rate limiter sees real IPs.
+- Optional demo user (`DEMO_USER_ENABLED`, credentials from `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD`),
+  created idempotently on startup with one funded KZT account.
 
 ### Asynchronous notifications: Transactional Outbox + Kafka
 
@@ -250,7 +270,7 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
 
 ## Testing
 
-`./mvnw test`: 105 tests.
+`./mvnw test`: 111 tests.
 
 - **Unit (Mockito):** services, ledger invariants, lock order (`InOrder`), idempotent replay,
   ownership rules, auth (hashing, same error message), analytics parameter rules.
@@ -262,6 +282,8 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
   retried and dead-lettered with no partial side effects; report cached and invalidated by the next transfer.
 - **API contract:** CORS preflight/expose headers, error `code` for every error type, paginated history,
   and the exact list of documented endpoints (`OpenApiDocsTest`).
+- **Production features:** auth rate limit over HTTP (429 + `Retry-After`, per IP, separate counters for
+  login and register), demo user seeded from properties and not duplicated on restart.
 - **Concurrency** ([`TransferConcurrencyTest`](src/test/java/com/esep/transaction/TransferConcurrencyTest.java)):
   - 100 parallel random transfers: total money unchanged, no negative balances,
     every transaction sums to zero, every balance equals its ledger sum;
@@ -281,10 +303,16 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
 | `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | report cache |
 | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9094` | outbox publisher and notification consumer |
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | browser origins allowed to call the API |
+| `RATE_LIMIT_ENABLED` / `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW` | `true` / `10` / `1m` | auth rate limit |
+| `DEMO_USER_ENABLED` / `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` | `false` / empty / empty | optional demo user |
+
+Production values: [`.env.example`](.env.example) and [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Known limitations and roadmap
 
 - JWTs cannot be revoked before they expire: next step is short-lived access tokens + refresh tokens.
-- No rate limiting on `/api/auth/login`.
+- The auth rate limit is per IP only (no per-account lockout) with a fixed window: up to 2× the limit can pass
+  around a window boundary, and users behind one NAT share a limit. A sliding window or token bucket
+  (e.g. Bucket4j on Redis) plus a per-email counter would be the next step.
 - All deposits in one currency lock the same system account row (a hot spot under heavy load).
 - Published outbox rows are never cleaned up (needs a retention job); the DLT has no automatic replay.

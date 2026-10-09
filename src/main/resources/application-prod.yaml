@@ -1,0 +1,54 @@
+# Production profile: SPRING_PROFILES_ACTIVE=prod.
+# Every secret is a placeholder WITHOUT a default: if a variable is missing the app fails to start
+# ("Could not resolve placeholder") instead of running with a well-known value.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      # small server (2 GB RAM): fewer connections, less memory on both sides
+      maximum-pool-size: 5
+  lifecycle:
+    # graceful shutdown: on SIGTERM stop accepting requests, let in-flight ones finish (max 20s)
+    timeout-per-shutdown-phase: 20s
+
+server:
+  shutdown: graceful
+  # behind Caddy: trust X-Forwarded-For / X-Forwarded-Proto only from internal (Docker network) addresses,
+  # so request.getRemoteAddr() is the real client IP (the rate limiter needs it) and cannot be spoofed
+  forward-headers-strategy: native
+  error:
+    include-stacktrace: never
+    include-message: never
+
+esep:
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+  cors:
+    # the GitHub Pages origin, e.g. https://bakhyzh.github.io (no path, no trailing slash)
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+
+# API docs are for development; in prod they only advertise the attack surface
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      # "UP"/"DOWN" only: no versions, hostnames or connection details for anonymous callers
+      show-details: never
+
+logging:
+  level:
+    root: INFO
+    # Kafka clients print their whole config at INFO on every start; noise, not useful in prod
+    org.apache.kafka: WARN

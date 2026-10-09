@@ -35,6 +35,8 @@ public enum ErrorCode {
     SYSTEM_ACCOUNT_OPERATION,
     INVALID_AMOUNT,
     IDEMPOTENCY_KEY_REUSED,
+    // 429
+    RATE_LIMITED,
     // 500
     INTERNAL_ERROR
 }

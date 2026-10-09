@@ -1,5 +1,6 @@
 package com.esep.common.exception;
 
+import com.esep.ratelimit.RateLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
 import org.springframework.core.MethodParameter;
@@ -84,6 +85,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ProblemDetail handleAccessDenied(AccessDeniedException ex) {
         return problem(HttpStatus.FORBIDDEN, "Forbidden", "You do not have permission to perform this action",
                 ErrorCode.FORBIDDEN);
+    }
+
+    // 429 from AuthRateLimitFilter; Retry-After (seconds) tells the client when the window ends
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ProblemDetail> handleRateLimit(RateLimitExceededException ex) {
+        long retryAfterSeconds = Math.max(1, (ex.getRetryAfter().toMillis() + 999) / 1000);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
+                .body(problem(HttpStatus.TOO_MANY_REQUESTS, "Too many requests", ex.getMessage(),
+                        ErrorCode.RATE_LIMITED));
     }
 
     // parent of both optimistic (@Version) and pessimistic (deadlock, lock timeout) failures:

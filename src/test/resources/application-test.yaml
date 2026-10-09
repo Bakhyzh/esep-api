@@ -2,6 +2,9 @@ esep:
   security:
     jwt:
       secret: test-only-secret-0123456789abcdef0123456789
+  # most tests log in many times from 127.0.0.1; RateLimitIntegrationTest turns it on
+  rate-limit:
+    enabled: false
   outbox:
     poll-interval: 200ms
   kafka:
