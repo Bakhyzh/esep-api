@@ -4,6 +4,7 @@ import com.esep.account.dto.AccountResponse;
 import com.esep.account.dto.CreateAccountRequest;
 import com.esep.common.exception.BusinessRuleException;
 import com.esep.common.exception.ConflictException;
+import com.esep.common.exception.ErrorCode;
 import com.esep.common.exception.ResourceNotFoundException;
 import com.esep.security.CurrentUser;
 import com.esep.user.User;
@@ -85,11 +86,11 @@ public class AccountService {
         try {
             return Currency.getInstance(code);
         } catch (IllegalArgumentException e) {
-            throw new BusinessRuleException("Unknown currency: " + code);
+            throw new BusinessRuleException(ErrorCode.UNSUPPORTED_CURRENCY, "Unknown currency: " + code);
         }
     }
 
     private static ConflictException duplicateAccount(Long userId, Currency currency) {
-        return new ConflictException("User " + userId + " already has an active " + currency + " account");
+        return new ConflictException(ErrorCode.DUPLICATE_ACCOUNT, "User " + userId + " already has an active " + currency + " account");
     }
 }

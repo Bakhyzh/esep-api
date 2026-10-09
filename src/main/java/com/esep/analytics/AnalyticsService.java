@@ -6,6 +6,7 @@ import com.esep.analytics.dto.MovingAveragePoint;
 import com.esep.analytics.dto.SpendingPoint;
 import com.esep.analytics.dto.TopTransaction;
 import com.esep.common.exception.InvalidRequestException;
+import com.esep.common.time.TimeZones;
 import com.esep.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -28,30 +28,46 @@ public class AnalyticsService {
     static final int MAX_DAYS = 366;
 
     private final AnalyticsRepository repository;
+    private final AnalyticsCache cache;
 
     public List<SpendingPoint> spending(CurrentUser currentUser, ReportRequest request, Period period) {
-        return repository.spendingByPeriod(scope(currentUser, request), period);
+        ReportScope scope = scope(currentUser, request);
+        return cache.getOrLoad(scope.userId(), "spending", cacheParams(scope, period), SpendingPoint.class,
+                () -> repository.spendingByPeriod(scope, period));
     }
 
     public List<TopTransaction> top(CurrentUser currentUser, ReportRequest request, int limit) {
-        return repository.topTransactions(scope(currentUser, request), limit);
+        ReportScope scope = scope(currentUser, request);
+        return cache.getOrLoad(scope.userId(), "top", cacheParams(scope, limit), TopTransaction.class,
+                () -> repository.topTransactions(scope, limit));
     }
 
     public List<MovingAveragePoint> movingAverage(CurrentUser currentUser, ReportRequest request, int window) {
-        return repository.movingAverage(scope(currentUser, request), window);
+        ReportScope scope = scope(currentUser, request);
+        return cache.getOrLoad(scope.userId(), "moving-average", cacheParams(scope, window), MovingAveragePoint.class,
+                () -> repository.movingAverage(scope, window));
     }
 
     public List<MonthlyComparison> monthlyComparison(CurrentUser currentUser, Long userId, String currency,
                                                      ZoneId zone, YearMonth until, int months) {
-        ZoneId validZone = requireRegionZone(zone);
+        ZoneId validZone = TimeZones.requireRegion(zone);
         YearMonth lastMonth = until != null ? until : YearMonth.now(validZone);
         YearMonth firstMonth = lastMonth.minusMonths(months - 1L);
-        return repository.monthlyComparison(new ReportScope(owner(currentUser, userId), currency,
-                firstMonth.atDay(1), lastMonth.atEndOfMonth(), validZone));
+        ReportScope scope = new ReportScope(owner(currentUser, userId), currency,
+                firstMonth.atDay(1), lastMonth.atEndOfMonth(), validZone);
+        return cache.getOrLoad(scope.userId(), "monthly", cacheParams(scope, months), MonthlyComparison.class,
+                () -> repository.monthlyComparison(scope));
+    }
+
+    // built from the RESOLVED scope (defaults applied): "last 30 days" asked today and tomorrow
+    // are different keys, so a default range never serves yesterday's window
+    private static String cacheParams(ReportScope scope, Object extra) {
+        return String.join(":", scope.currency(), scope.fromDay().toString(), scope.toDay().toString(),
+                scope.zone().getId(), String.valueOf(extra));
     }
 
     private ReportScope scope(CurrentUser currentUser, ReportRequest request) {
-        ZoneId zone = requireRegionZone(request.zone());
+        ZoneId zone = TimeZones.requireRegion(request.zone());
         LocalDate to = request.to() != null ? request.to() : LocalDate.now(zone);
         LocalDate from = request.from() != null ? request.from() : to.minusDays(DEFAULT_DAYS - 1);
         if (from.isAfter(to)) {
@@ -69,17 +85,6 @@ public class AnalyticsService {
             throw new AccessDeniedException("You can only see your own analytics");
         }
         return ownerId;
-    }
-
-    /**
-     * Only region ids like "Asia/Almaty". PostgreSQL reads offsets in AT TIME ZONE as POSIX,
-     * where the sign is inverted: '+05:00' would silently mean UTC-5.
-     */
-    private static ZoneId requireRegionZone(ZoneId zone) {
-        if (zone instanceof ZoneOffset && !zone.equals(ZoneOffset.UTC)) {
-            throw new InvalidRequestException("Use a region time zone id like Asia/Almaty, not an offset");
-        }
-        return zone.normalized().equals(ZoneOffset.UTC) ? ZoneId.of("UTC") : zone;
     }
 
     /** Common report parameters; from/to are calendar days in {@code zone}, both inclusive. */

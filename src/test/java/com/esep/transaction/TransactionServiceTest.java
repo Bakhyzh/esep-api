@@ -1,6 +1,7 @@
 package com.esep.transaction;
 
 import com.esep.common.exception.BusinessRuleException;
+import com.esep.common.exception.ErrorCode;
 import com.esep.security.CurrentUser;
 import com.esep.transaction.dto.TransactionResponse;
 import com.esep.transaction.dto.TransactionResult;
@@ -55,7 +56,7 @@ class TransactionServiceTest {
 
     @Test
     void transfer_businessError_isNotSwallowed() {
-        when(processor.transfer(ME, KEY, REQUEST)).thenThrow(new BusinessRuleException("Insufficient funds on account 1"));
+        when(processor.transfer(ME, KEY, REQUEST)).thenThrow(new BusinessRuleException(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds on account 1"));
 
         assertThatThrownBy(() -> service.transfer(ME, KEY, REQUEST)).isInstanceOf(BusinessRuleException.class);
     }

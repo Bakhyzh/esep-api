@@ -28,13 +28,51 @@ spring:
       # otherwise CREATE INDEX CONCURRENTLY (V6) waits for Flyway's own transaction forever
       transactional-lock: false
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # a slow cache must not slow down reports: fail fast and fall back to the database
+      timeout: 500ms
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9094}
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        # do not block a publisher thread for a minute when the broker is down
+        max.block.ms: 5000
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 10000
+    consumer:
+      auto-offset-reset: earliest
+
 server:
   port: ${SERVER_PORT:8081}
 
 esep:
+  cors:
+    # comma-separated list, e.g. CORS_ALLOWED_ORIGINS=https://app.example.com,http://localhost:5173
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    max-age: 1h
   security:
     jwt:
       # no default on purpose: the app must not start in prod with a well-known key
       secret: ${JWT_SECRET:}
       issuer: esep-api
       ttl: 1h
+  analytics:
+    cache:
+      ttl: 5m
+  outbox:
+    topic: esep.transfers
+    poll-interval: 1s
+    batch-size: 100
+    send-timeout: 5s
+    publisher-enabled: true
+  kafka:
+    notifications-group: esep-notifications
+    retry:
+      interval: 1s
+      max-attempts: 3

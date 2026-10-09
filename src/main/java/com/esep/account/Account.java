@@ -1,6 +1,7 @@
 package com.esep.account;
 
 import com.esep.common.exception.BusinessRuleException;
+import com.esep.common.exception.ErrorCode;
 import com.esep.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -77,7 +78,7 @@ public class Account {
     public void debit(BigDecimal amount) {
         requireActive();
         if (type == AccountType.USER && balance.compareTo(amount) < 0) {
-            throw new BusinessRuleException("Insufficient funds on account " + id);
+            throw new BusinessRuleException(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds on account " + id);
         }
         this.balance = balance.subtract(amount);
     }
@@ -94,14 +95,15 @@ public class Account {
 
     public void close() {
         if (isSystem()) {
-            throw new BusinessRuleException("System account " + id + " cannot be closed");
+            throw new BusinessRuleException(ErrorCode.SYSTEM_ACCOUNT_OPERATION, "System account " + id + " cannot be closed");
         }
         if (status == AccountStatus.CLOSED) {
-            throw new BusinessRuleException("Account " + id + " is already closed");
+            throw new BusinessRuleException(ErrorCode.ACCOUNT_CLOSED, "Account " + id + " is already closed");
         }
         // compareTo, not equals: 0.0000 and 0 are not equal by equals() because of different scale
         if (balance.compareTo(BigDecimal.ZERO) != 0) {
-            throw new BusinessRuleException("Account " + id + " has non-zero balance and cannot be closed");
+            throw new BusinessRuleException(ErrorCode.ACCOUNT_NOT_EMPTY,
+                    "Account " + id + " has non-zero balance and cannot be closed");
         }
         this.status = AccountStatus.CLOSED;
         this.closedAt = Instant.now();
@@ -109,7 +111,7 @@ public class Account {
 
     private void requireActive() {
         if (status != AccountStatus.ACTIVE) {
-            throw new BusinessRuleException("Account " + id + " is closed");
+            throw new BusinessRuleException(ErrorCode.ACCOUNT_CLOSED, "Account " + id + " is closed");
         }
     }
 }

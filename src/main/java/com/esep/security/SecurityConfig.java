@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
@@ -19,14 +20,18 @@ import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, CorsProperties.class})
 public class SecurityConfig {
 
     @Bean
@@ -34,6 +39,9 @@ public class SecurityConfig {
                                             JwtToCurrentUserConverter jwtConverter,
                                             SecurityProblemHandler problemHandler) throws Exception {
         http
+                // CORS inside Spring Security: the browser's preflight OPTIONS request carries no token,
+                // so it must be answered by the CORS filter before authentication would reject it with 401
+                .cors(Customizer.withDefaults())
                 // CSRF attacks abuse cookies the browser sends automatically; we use no cookies,
                 // the token goes in the Authorization header explicitly, so CSRF protection is not needed
                 .csrf(AbstractHttpConfigurer::disable)
@@ -54,6 +62,27 @@ public class SecurityConfig {
                         .authenticationEntryPoint(problemHandler)
                         .accessDeniedHandler(problemHandler));
         return http.build();
+    }
+
+    /**
+     * Picked up by .cors(withDefaults()). Credentials (cookies) are not allowed: the JWT travels in the
+     * Authorization header, which is listed explicitly. Response headers the frontend must read
+     * (Location, Idempotent-Replayed) have to be exposed, otherwise the browser hides them from JS.
+     */
+    @Bean
+    CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
+        CorsConfiguration cors = new CorsConfiguration();
+        cors.setAllowedOrigins(properties.allowedOrigins());
+        cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
+        cors.setExposedHeaders(List.of("Location", "Idempotent-Replayed"));
+        cors.setAllowCredentials(false);
+        if (properties.maxAge() != null) {
+            cors.setMaxAge(properties.maxAge());   // browsers cache the preflight answer
+        }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", cors);
+        return source;
     }
 
     @Bean
