@@ -6,6 +6,7 @@ import com.esep.auth.dto.TokenResponse;
 import com.esep.auth.dto.UserResponse;
 import com.esep.security.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AuthController {
     private final AuthService authService;
 
     @Operation(summary = "Register a new user (role USER)")
+    @SecurityRequirements   // public: no JWT
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public UserResponse register(@Valid @RequestBody RegisterRequest request) {
@@ -34,6 +36,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Log in and get a JWT access token")
+    @SecurityRequirements   // public: no JWT
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);

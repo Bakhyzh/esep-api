@@ -6,6 +6,7 @@ import com.esep.analytics.dto.MovingAveragePoint;
 import com.esep.analytics.dto.SpendingPoint;
 import com.esep.analytics.dto.TopTransaction;
 import com.esep.common.exception.InvalidRequestException;
+import com.esep.common.time.TimeZones;
 import com.esep.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -15,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
@@ -50,7 +50,7 @@ public class AnalyticsService {
 
     public List<MonthlyComparison> monthlyComparison(CurrentUser currentUser, Long userId, String currency,
                                                      ZoneId zone, YearMonth until, int months) {
-        ZoneId validZone = requireRegionZone(zone);
+        ZoneId validZone = TimeZones.requireRegion(zone);
         YearMonth lastMonth = until != null ? until : YearMonth.now(validZone);
         YearMonth firstMonth = lastMonth.minusMonths(months - 1L);
         ReportScope scope = new ReportScope(owner(currentUser, userId), currency,
@@ -67,7 +67,7 @@ public class AnalyticsService {
     }
 
     private ReportScope scope(CurrentUser currentUser, ReportRequest request) {
-        ZoneId zone = requireRegionZone(request.zone());
+        ZoneId zone = TimeZones.requireRegion(request.zone());
         LocalDate to = request.to() != null ? request.to() : LocalDate.now(zone);
         LocalDate from = request.from() != null ? request.from() : to.minusDays(DEFAULT_DAYS - 1);
         if (from.isAfter(to)) {
@@ -85,17 +85,6 @@ public class AnalyticsService {
             throw new AccessDeniedException("You can only see your own analytics");
         }
         return ownerId;
-    }
-
-    /**
-     * Only region ids like "Asia/Almaty". PostgreSQL reads offsets in AT TIME ZONE as POSIX,
-     * where the sign is inverted: '+05:00' would silently mean UTC-5.
-     */
-    private static ZoneId requireRegionZone(ZoneId zone) {
-        if (zone instanceof ZoneOffset && !zone.equals(ZoneOffset.UTC)) {
-            throw new InvalidRequestException("Use a region time zone id like Asia/Almaty, not an offset");
-        }
-        return zone.normalized().equals(ZoneOffset.UTC) ? ZoneId.of("UTC") : zone;
     }
 
     /** Common report parameters; from/to are calendar days in {@code zone}, both inclusive. */
