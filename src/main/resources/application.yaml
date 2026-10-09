@@ -52,6 +52,10 @@ server:
   port: ${SERVER_PORT:8081}
 
 esep:
+  cors:
+    # comma-separated list, e.g. CORS_ALLOWED_ORIGINS=https://app.example.com,http://localhost:5173
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    max-age: 1h
   security:
     jwt:
       # no default on purpose: the app must not start in prod with a well-known key
