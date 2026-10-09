@@ -1,0 +1,160 @@
+name: Deploy
+
+# push to main: tests -> image to GHCR -> deploy to the VPS over SSH.
+# Each stage runs only if the previous one succeeded (needs:).
+on:
+  push:
+    branches: [main]
+  # manual re-run from the Actions tab (e.g. after fixing the server); deploys the selected commit
+  workflow_dispatch:
+
+# one deploy at a time; a newer push waits instead of cancelling a deploy halfway through
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # GHCR names must be lowercase
+  IMAGE: ghcr.io/bakhyzh/esep-api
+
+jobs:
+  verify:
+    # the same job as on pull requests: ./mvnw verify, compose validation, docker build
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # push to ghcr.io with the built-in GITHUB_TOKEN, no personal token needed
+    outputs:
+      tag: ${{ steps.tag.outputs.short }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Short commit sha
+        id: tag
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.short }}
+          # links the package to this repository on GitHub
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: image
+    # switched on by the repository variable DEPLOY_ENABLED=true once the server is ready (docs/DEPLOY.md);
+    # until then main still gets tested images in GHCR, but nobody tries to SSH into a server that does not exist
+    if: vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://${{ vars.API_DOMAIN }}/actuator/health
+    permissions:
+      contents: read
+      packages: read    # the server pulls with this job's short-lived token (works for a private package too)
+    env:
+      TAG: ${{ needs.image.outputs.tag }}
+      SSH_HOST: ${{ secrets.SSH_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+      API_DOMAIN: ${{ vars.API_DOMAIN }}
+      REMOTE_DIR: esep   # relative to the deploy user's home: ~/esep
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # pinned host key: protects against a man-in-the-middle pretending to be the server
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<CONFIG
+          Host server
+            HostName $SSH_HOST
+            User $SSH_USER
+            Port $SSH_PORT
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          CONFIG
+
+      - name: Upload compose file and Caddyfile
+        run: |
+          # shellcheck disable=SC2029  # variables are meant to expand on the runner
+          ssh server "mkdir -p $REMOTE_DIR"
+          scp docker-compose.prod.yml Caddyfile "server:$REMOTE_DIR/"
+
+      - name: Pull and start the new version
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_USER: ${{ github.actor }}
+        run: |
+          # shellcheck disable=SC2029  # variables are meant to expand on the runner
+          # the token goes through stdin, never on a command line (visible in `ps` on the server)
+          printf '%s' "$GHCR_TOKEN" | ssh server "docker login ghcr.io -u $GHCR_USER --password-stdin"
+          # shellcheck disable=SC2029
+          ssh server "REMOTE_DIR=$REMOTE_DIR TAG=$TAG bash -s" <<'SCRIPT'
+          set -euo pipefail
+          cd ~/"$REMOTE_DIR"
+          test -f .env || { echo "~/$REMOTE_DIR/.env is missing, see docs/DEPLOY.md"; exit 1; }
+          # record the deployed version in .env: a manual `docker compose up` keeps it, a rollback changes it
+          if grep -q '^IMAGE_TAG=' .env; then
+            sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env
+          else
+            echo "IMAGE_TAG=$TAG" >> .env
+          fi
+          compose="docker compose -f docker-compose.prod.yml --env-file .env"
+          $compose pull
+          docker logout ghcr.io
+          # --wait: returns only when every container with a healthcheck is healthy (or fails after the timeout)
+          $compose up -d --remove-orphans --wait --wait-timeout 240
+          $compose ps
+          # keep recent images for a fast rollback, drop the rest
+          docker image prune -af --filter "until=240h" > /dev/null
+          SCRIPT
+
+      - name: Health check through HTTPS
+        if: env.API_DOMAIN != ''
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS --max-time 5 "https://$API_DOMAIN/actuator/health" | grep -q '"status":"UP"'; then
+              echo "Healthy: version $TAG"
+              exit 0
+            fi
+            echo "attempt $i: not healthy yet"
+            sleep 6
+          done
+          echo "Health check failed; logs: ssh to the server and run docker compose logs app (docs/DEPLOY.md)"
+          exit 1
+
+      - name: Show app logs on failure
+        if: failure()
+        run: |
+          # shellcheck disable=SC2029
+          ssh server "cd $REMOTE_DIR && docker compose -f docker-compose.prod.yml --env-file .env logs --tail 100 app" || true
