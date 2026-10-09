@@ -1,17 +1,21 @@
 name: CI
 
+# pull requests: tests + compose validation + image build;
+# main: the same job runs as the first stage of deploy.yml (workflow_call), so it is not duplicated here
 on:
-  push:
-    branches: [main]
   pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
@@ -21,8 +25,13 @@ jobs:
       - name: Test
         run: ./mvnw -B verify
 
-      - name: Validate docker-compose.yml
-        run: docker compose config -q
+      - name: Validate compose files
+        run: |
+          docker compose config -q
+          # prod compose needs its variables; dummy values are enough to check the syntax
+          cp .env.example .env.ci
+          sed -i 's/^\(DB_PASSWORD\|JWT_SECRET\)=$/\1=ci-dummy-value-0123456789abcdef0123456789/' .env.ci
+          docker compose -f docker-compose.prod.yml --env-file .env.ci config -q
 
       - name: Build Docker image
         run: docker build -t esep-api:ci .

@@ -1,6 +1,6 @@
 # Esep API
 
-[![CI](https://github.com/Bakhyzh/esep-api/actions/workflows/ci.yml/badge.svg)](https://github.com/Bakhyzh/esep-api/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Bakhyzh/esep-api/actions/workflows/deploy.yml/badge.svg)](https://github.com/Bakhyzh/esep-api/actions/workflows/deploy.yml)
 
 Wallets and money transfers on a **double-entry ledger**, with JWT security, SQL spending analytics,
 a Redis report cache and Kafka notifications through a Transactional Outbox.
