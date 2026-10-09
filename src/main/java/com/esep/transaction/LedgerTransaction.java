@@ -2,6 +2,7 @@ package com.esep.transaction;
 
 import com.esep.account.Account;
 import com.esep.common.exception.BusinessRuleException;
+import com.esep.common.exception.ErrorCode;
 import com.esep.user.User;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -131,13 +132,13 @@ public class LedgerTransaction {
 
     private static BigDecimal normalize(BigDecimal amount) {
         if (amount == null || amount.signum() <= 0) {
-            throw new BusinessRuleException("Amount must be positive");
+            throw new BusinessRuleException(ErrorCode.INVALID_AMOUNT, "Amount must be positive");
         }
         try {
             // UNNECESSARY: never round money silently, reject 10.00001 instead of turning it into 10.0000
             return amount.setScale(MONEY_SCALE, RoundingMode.UNNECESSARY);
         } catch (ArithmeticException e) {
-            throw new BusinessRuleException("Amount must have at most " + MONEY_SCALE + " decimal places");
+            throw new BusinessRuleException(ErrorCode.INVALID_AMOUNT, "Amount must have at most " + MONEY_SCALE + " decimal places");
         }
     }
 }

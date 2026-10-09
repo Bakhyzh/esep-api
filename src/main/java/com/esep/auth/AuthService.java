@@ -5,6 +5,7 @@ import com.esep.auth.dto.RegisterRequest;
 import com.esep.auth.dto.TokenResponse;
 import com.esep.auth.dto.UserResponse;
 import com.esep.common.exception.ConflictException;
+import com.esep.common.exception.ErrorCode;
 import com.esep.common.exception.ResourceNotFoundException;
 import com.esep.security.TokenService;
 import com.esep.user.Role;
@@ -40,7 +41,7 @@ public class AuthService {
     public UserResponse register(RegisterRequest request) {
         String email = normalize(request.email());
         if (userRepository.existsByEmail(email)) {
-            throw new ConflictException("Email is already registered");
+            throw new ConflictException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered");
         }
         try {
             User user = userRepository.saveAndFlush(
@@ -48,7 +49,7 @@ public class AuthService {
             return UserResponse.from(user);
         } catch (DataIntegrityViolationException e) {
             // two parallel registrations with the same email: the UNIQUE constraint stopped the second
-            throw new ConflictException("Email is already registered");
+            throw new ConflictException(ErrorCode.EMAIL_ALREADY_REGISTERED, "Email is already registered");
         }
     }
 
