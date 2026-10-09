@@ -13,11 +13,13 @@ Testcontainers · Docker Compose · GitHub Actions
 
 ## Live demo
 
-- Frontend: _TODO: https://bakhyzh.github.io/esep-web/_
-- API health: _TODO: https://api.example.com/actuator/health_
-- Demo login: _TODO: shared on request_
+- Frontend: https://bakhyzh.github.io/esep-web/ (sign in as `alice@esep.dev` / `password123`)
+- API: runs on the author's machine behind a Cloudflare quick tunnel while the demo is on, so it may be offline;
+  the URL changes on every start (`scripts/public-demo.sh status` prints it)
 
 Deployment (VPS + Docker Compose + Caddy, GitHub Actions): [docs/DEPLOY.md](docs/DEPLOY.md).
+Temporary demo without a server, one command: `scripts/public-demo.sh`
+([docs/DEPLOY.md, section 6](docs/DEPLOY.md#6-temporary-demo-without-a-server-this-mac--cloudflare-tunnel)).
 
 ## Quick start
 

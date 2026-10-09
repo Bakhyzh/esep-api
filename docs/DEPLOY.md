@@ -20,6 +20,7 @@ Contents:
 3. [First launch and checks](#3-first-launch-and-checks)
 4. [Logs, operations and rollback](#4-logs-operations-and-rollback)
 5. [Known limitations and next steps](#5-known-limitations-and-next-steps)
+6. [Temporary demo without a server (this Mac + Cloudflare tunnel)](#6-temporary-demo-without-a-server-this-mac--cloudflare-tunnel)
 
 ---
 
@@ -326,3 +327,50 @@ This is a portfolio demo on one cheap server. Deliberate simplifications:
 | Images not scanned | known CVEs in base images go unnoticed | Trivy/Grype in CI, Dependabot/Renovate for dependencies and base images |
 | Frontend and API on different origins | CORS preflight on every new endpoint | serve both from one domain behind the same proxy |
 | JWTs cannot be revoked | a stolen token works until it expires (1 h) | short-lived access tokens + refresh tokens with revocation |
+
+---
+
+## 6. Temporary demo without a server (this Mac + Cloudflare tunnel)
+
+Until there is a VPS, the live site can use the API running in Docker on a developer machine:
+
+```
+browser ──HTTPS──> GitHub Pages  https://bakhyzh.github.io/esep-web/
+   │
+   └────HTTPS──> https://<random>.trycloudflare.com ──(Cloudflare quick tunnel)──> this Mac :8081 (docker compose)
+```
+
+One command does everything:
+
+```bash
+brew install cloudflared            # once
+scripts/public-demo.sh              # start Docker + API, open a tunnel, point the site at it (2-4 min)
+scripts/public-demo.sh status       # tunnel URL, API up/down
+scripts/public-demo.sh stop         # stop the tunnel and the containers
+BUILD=1 scripts/public-demo.sh      # same as start, but rebuild the API image after code changes
+```
+
+What `start` does, step by step (it stops with a clear error if a step fails):
+
+1. Starts Docker Desktop if needed and runs `docker compose up -d` with two additions:
+   `CORS_ALLOWED_ORIGINS=https://bakhyzh.github.io,http://localhost:5173` and **its own `JWT_SECRET`**
+   (the default in `docker-compose.yml` is public, so anyone could forge tokens for an exposed API).
+   The secret is generated once into `~/.esep-demo/jwt_secret` and reused, so sessions survive restarts.
+2. Starts `cloudflared tunnel --url http://localhost:8081` in the background and keeps the Mac awake
+   (`caffeinate`) while it runs.
+3. Checks the tunnel: `/actuator/health` answers and a CORS preflight from the Pages origin is allowed.
+4. Sets the esep-web repository variable `VITE_API_URL` to the tunnel URL (GitHub API, token from
+   `git credential fill` or `GITHUB_TOKEN` with `repo` + `workflow` scopes), runs esep-web `deploy.yml`
+   and waits until GitHub Pages serves the build with the new URL.
+
+State lives in `~/.esep-demo` (secret, compose override, tunnel PID, URL and log), outside the repository.
+
+Limits of this mode:
+
+- The site works only while this Mac is on, online and running Docker and the tunnel.
+- A quick tunnel gets a **new URL on every start**, so every start rebuilds the site.
+- Quick tunnels have no uptime guarantee (Cloudflare terms); for a stable URL use a named tunnel with a
+  Cloudflare account and your own domain, or the VPS setup above.
+- The `dev` profile seeds demo users with the public password `password123`, including `admin@esep.dev`.
+  Fine for demo data; stop the demo when you do not need it.
+
