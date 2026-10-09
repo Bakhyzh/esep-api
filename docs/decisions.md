@@ -89,3 +89,44 @@ a notification appears about a second after the transfer.
 
 `apache/kafka:3.9.1` without ZooKeeper. Two listeners: `kafka:9092` inside the compose network,
 `localhost:9094` for the app started from an IDE. Replication factor 1 is for development only.
+
+## D10. CORS inside Spring Security, exact origins, no credentials
+
+**Decision.** `http.cors(withDefaults())` with a `CorsConfigurationSource` for `/api/**`;
+allowed origins from `esep.cors.allowed-origins` (`CORS_ALLOWED_ORIGINS`, default `http://localhost:5173`).
+Allowed request headers: `Authorization`, `Content-Type`, `Idempotency-Key`; exposed response headers:
+`Location`, `Idempotent-Replayed`. `allowCredentials = false`, preflight cached for 1 hour.
+**Why in Security and not only in MVC.** The browser's preflight `OPTIONS` carries no token: without the CORS
+filter in the security chain it would be rejected with 401 and the real request would never be sent.
+Error responses (401/403/404) also get CORS headers, so the UI can read them (e.g. to handle an expired token).
+**Why no credentials.** The JWT travels in the `Authorization` header, not in a cookie; no cookies means no CSRF
+and no need for `allowCredentials`.
+**Cost.** Every new frontend origin (staging, prod) must be added to the config.
+
+## D11. One error format: RFC 9457 + a stable `code`
+
+**Decision.** Every error is `application/problem+json`: `type`, `title`, `status`, `detail` (the human message),
+`instance`, plus `code` (enum `ErrorCode`), `timestamp` and, for validation, `errors: [{field, message}]`.
+Spring MVC's own errors (unknown route, 405, 415, malformed JSON, missing header, type mismatch) are mapped
+in `handleExceptionInternal`; security filter errors are routed through the same advice.
+**Why `code`.** `detail` is for people and may change; clients switch on `code`
+(e.g. `INSUFFICIENT_FUNDS` → highlight the amount field). Codes are only ever added, never renamed.
+**Why `errors` is a list, not a map.** One field can break several rules; a list keeps all of them in order.
+This replaced the earlier `{field: message}` map; no external client used it yet.
+**"Message".** RFC 9457 calls it `detail`; a duplicate `message` field was not added.
+**Cost.** Errors that never reach Spring MVC (e.g. a request rejected by the servlet container's URL firewall)
+still use the container's default body.
+
+## D12. Operation history endpoint for the UI
+
+**Decision.** `GET /api/transactions?accountId=&from=&to=&zone=&page=&size=` returns the user's ledger entries
+(a statement), newest first, as `PageResponse {content, page, size, totalElements, totalPages}`.
+Offset pagination (page numbers for the UI). Dates are inclusive calendar days in a region time zone.
+**Why not Spring Data `Page`.** Its JSON is an implementation detail; a small record is a stable contract.
+**Cost.** Deep pages get slower (`OFFSET` scans skipped rows); keyset pagination on `(created_at, id)` is the
+upgrade path. Two queries per page (`count` + data).
+
+## D13. API surface is guarded by a test
+
+`OpenApiDocsTest` compares the documented operations with an explicit list and requires a summary and error
+responses on each. Adding or renaming an endpoint is a conscious change; the frontend relies on it.

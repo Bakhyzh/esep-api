@@ -59,7 +59,7 @@ curl -s "localhost:8081/api/analytics/spending?currency=KZT&period=DAY&zone=Asia
 
 A ready-made **Postman collection** with test scripts is in
 [`postman/esep-api.postman_collection.json`](postman/esep-api.postman_collection.json)
-(38 requests: auth, accounts, transfers, idempotent retries, analytics, 401/403/404 cases).
+(42 requests: auth, accounts, transfers, idempotent retries, history, notifications, analytics, error codes).
 
 ## Local development
 
@@ -221,11 +221,36 @@ aware day boundaries. Index design and `EXPLAIN ANALYZE` on 2M ledger entries:
 | GET | `/api/analytics/spending` · `top-transactions` · `moving-average` · `monthly-comparison` | own data; ADMIN: `?userId=` |
 | GET | `/api/notifications` | own notifications |
 
-Errors follow RFC 9457 (`application/problem+json`), validation errors list the invalid fields.
+| GET | `/api/transactions?accountId=&from=&to=&page=&size=` | own operation history (paginated) |
+
+### Errors
+
+Every error has the same shape (RFC 9457 `application/problem+json` plus a stable `code`):
+
+```json
+{
+  "type": "about:blank",
+  "title": "Validation failed",
+  "status": 400,
+  "detail": "Request has invalid fields",
+  "instance": "/api/transfers",
+  "code": "VALIDATION_FAILED",
+  "timestamp": "2026-10-09T10:15:30Z",
+  "errors": [{ "field": "amount", "message": "must be greater than 0" }]
+}
+```
+
+Clients switch on `code` (`INSUFFICIENT_FUNDS`, `CURRENCY_MISMATCH`, `IDEMPOTENCY_KEY_REUSED`, `UNAUTHORIZED`, ...;
+full list in `ErrorCode`), never on `detail`. `errors` is present only for `VALIDATION_FAILED`.
+
+### CORS
+
+The API accepts browser calls from `CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`, the Vite dev server).
+The frontend lives in a separate repository: [esep-web](https://github.com/Bakhyzh/esep-web).
 
 ## Testing
 
-`./mvnw test`: 90 tests.
+`./mvnw test`: 105 tests.
 
 - **Unit (Mockito):** services, ledger invariants, lock order (`InOrder`), idempotent replay,
   ownership rules, auth (hashing, same error message), analytics parameter rules.
@@ -235,6 +260,8 @@ Errors follow RFC 9457 (`application/problem+json`), validation errors list the 
 - **Kafka + Redis (Testcontainers):** transfer → outbox → topic → notifications end to end; rolled-back transfer
   leaves no event; duplicate delivery processed once; malformed message → DLT immediately; failing message
   retried and dead-lettered with no partial side effects; report cached and invalidated by the next transfer.
+- **API contract:** CORS preflight/expose headers, error `code` for every error type, paginated history,
+  and the exact list of documented endpoints (`OpenApiDocsTest`).
 - **Concurrency** ([`TransferConcurrencyTest`](src/test/java/com/esep/transaction/TransferConcurrencyTest.java)):
   - 100 parallel random transfers: total money unchanged, no negative balances,
     every transaction sums to zero, every balance equals its ledger sum;
@@ -253,6 +280,7 @@ Errors follow RFC 9457 (`application/problem+json`), validation errors list the 
 | `SERVER_PORT` | `8081` | HTTP port |
 | `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | report cache |
 | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9094` | outbox publisher and notification consumer |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | browser origins allowed to call the API |
 
 ## Known limitations and roadmap
 

@@ -44,6 +44,10 @@
       "value": "Asia/Almaty"
     },
     {
+      "key": "today",
+      "value": ""
+    },
+    {
       "key": "aliceToken",
       "value": ""
     },
@@ -909,6 +913,164 @@
               }
             }
           ]
+        },
+        {
+          "name": "History (Alice, page 0)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?page=0&size=5&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "5"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "const page = pm.response.json();",
+                  "pm.test(\"Page shape\", () => pm.expect(page).to.include.keys(\"content\", \"page\", \"size\", \"totalElements\", \"totalPages\"));",
+                  "pm.test(\"Newest first: the transfer is on top\", () =>",
+                  "    pm.expect(page.content[0].transactionId).to.eql(Number(pm.collectionVariables.get(\"transactionId\"))));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "History filtered by account and today",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/transactions?accountId={{aliceAccountId}}&from={{today}}&to={{today}}&zone={{zone}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "accountId",
+                  "value": "{{aliceAccountId}}"
+                },
+                {
+                  "key": "from",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "to",
+                  "value": "{{today}}"
+                },
+                {
+                  "key": "zone",
+                  "value": "{{zone}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = new Date(new Date().toLocaleString('en-US', { timeZone: pm.collectionVariables.get('zone') }));",
+                  "pm.collectionVariables.set('today', d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Today has operations\", () => pm.expect(pm.response.json().totalElements).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Notifications (Bob, via Kafka)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/notifications?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bobToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "setTimeout(() => {}, 2000); // the outbox publisher runs every second"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Bob was notified about the transfer\", () =>",
+                  "    pm.expect(pm.response.json().map(n => n.type)).to.include(\"TRANSFER_RECEIVED\"));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1560,7 +1722,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));"
+                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"code INSUFFICIENT_FUNDS\", () => pm.expect(pm.response.json().code).to.eql(\"INSUFFICIENT_FUNDS\"));"
                 ]
               }
             }
@@ -1653,7 +1816,10 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));",
-                  "pm.test(\"amount field reported\", () => pm.expect(pm.response.json().errors).to.have.property(\"amount\"));"
+                  "pm.test(\"VALIDATION_FAILED with the amount field\", () => {",
+                  "    pm.expect(pm.response.json().code).to.eql(\"VALIDATION_FAILED\");",
+                  "    pm.expect(pm.response.json().errors.map(e => e.field)).to.include(\"amount\");",
+                  "});"
                 ]
               }
             }
@@ -1695,7 +1861,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));"
+                  "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"code MISSING_PARAMETER\", () => pm.expect(pm.response.json().code).to.eql(\"MISSING_PARAMETER\"));"
                 ]
               }
             }
@@ -1757,6 +1924,35 @@
                 "api",
                 "accounts",
                 "999999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"code RESOURCE_NOT_FOUND\", () => pm.expect(pm.response.json().code).to.eql(\"RESOURCE_NOT_FOUND\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Unknown route -> 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/no-such-endpoint",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "no-such-endpoint"
               ]
             }
           },
