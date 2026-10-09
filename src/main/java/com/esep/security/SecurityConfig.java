@@ -67,7 +67,7 @@ public class SecurityConfig {
     /**
      * Picked up by .cors(withDefaults()). Credentials (cookies) are not allowed: the JWT travels in the
      * Authorization header, which is listed explicitly. Response headers the frontend must read
-     * (Location, Idempotent-Replayed) have to be exposed, otherwise the browser hides them from JS.
+     * (Location, Idempotent-Replayed, Retry-After on 429) have to be exposed, otherwise the browser hides them from JS.
      */
     @Bean
     CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
@@ -75,7 +75,7 @@ public class SecurityConfig {
         cors.setAllowedOrigins(properties.allowedOrigins());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "Idempotency-Key"));
-        cors.setExposedHeaders(List.of("Location", "Idempotent-Replayed"));
+        cors.setExposedHeaders(List.of("Location", "Idempotent-Replayed", "Retry-After"));
         cors.setAllowCredentials(false);
         if (properties.maxAge() != null) {
             cors.setMaxAge(properties.maxAge());   // browsers cache the preflight answer

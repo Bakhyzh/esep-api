@@ -62,6 +62,18 @@ esep:
       secret: ${JWT_SECRET:}
       issuer: esep-api
       ttl: 1h
+  rate-limit:
+    # per client IP and per endpoint, on POST /api/auth/login and /api/auth/register (counters in Redis)
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    max-requests: ${RATE_LIMIT_MAX_REQUESTS:10}
+    window: ${RATE_LIMIT_WINDOW:1m}
+  demo:
+    # optional demo user for a public demo; credentials come only from the environment
+    enabled: ${DEMO_USER_ENABLED:false}
+    email: ${DEMO_USER_EMAIL:}
+    password: ${DEMO_USER_PASSWORD:}
+    currency: KZT
+    initial-balance: ${DEMO_USER_INITIAL_BALANCE:100000}
   analytics:
     cache:
       ttl: 5m
