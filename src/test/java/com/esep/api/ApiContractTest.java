@@ -111,6 +111,15 @@ class ApiContractTest extends IntegrationTest {
     }
 
     @Test
+    void loginEmailWithNulCharacter_isValidationErrorNotDataConflict() throws Exception {
+        mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"a\\u0000b@test.esep\", \"password\": \"password123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.errors[0].field").value("email"));
+    }
+
+    @Test
     void malformedJson_isMalformedRequest() throws Exception {
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{oops"))
                 .andExpect(status().isBadRequest())
