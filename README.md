@@ -242,7 +242,6 @@ aware day boundaries. Index design and `EXPLAIN ANALYZE` on 2M ledger entries:
 | GET | `/api/transactions/{id}` | participants; ADMIN |
 | GET | `/api/analytics/spending` · `top-transactions` · `moving-average` · `monthly-comparison` | own data; ADMIN: `?userId=` |
 | GET | `/api/notifications` | own notifications |
-
 | GET | `/api/transactions?accountId=&from=&to=&page=&size=` | own operation history (paginated) |
 
 ### Errors
