@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /** Redis failures must never break a report: the cache is an optimization. */
@@ -34,7 +36,7 @@ class AnalyticsCacheTest {
 
     @BeforeEach
     void setUp() {
-        when(redis.opsForValue()).thenReturn(values);
+        lenient().when(redis.opsForValue()).thenReturn(values);
         cache = new AnalyticsCache(redis, JsonMapper.builder().build(), Duration.ofMinutes(5));
     }
 
@@ -57,5 +59,12 @@ class AnalyticsCacheTest {
         when(values.increment(anyString())).thenThrow(new RedisConnectionFailureException("down"));
 
         cache.invalidateUser(1L);   // no exception: the transfer is already committed
+    }
+
+    @Test
+    void zeroTtl_isRejectedOnStartup() {
+        assertThatThrownBy(() -> new AnalyticsCache(redis, JsonMapper.builder().build(), Duration.ZERO))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("esep.analytics.cache.ttl");
     }
 }
