@@ -74,6 +74,8 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       # demo default only; pass your own: JWT_SECRET=... docker compose up
       JWT_SECRET: ${JWT_SECRET:-docker-demo-secret-change-me-0123456789abcdef}
+      # the frontend's origin; e.g. CORS_ALLOWED_ORIGINS=http://localhost:4173 docker compose up
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
     ports:
       - "${APP_PORT:-8081}:8081"
 

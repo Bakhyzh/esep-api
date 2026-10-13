@@ -50,7 +50,7 @@ prepare_state() {
     chmod 600 "$STATE/jwt_secret"
     log "generated a JWT secret in $STATE/jwt_secret"
   fi
-  # CORS for the Pages origin (docker-compose.yml does not pass CORS_ALLOWED_ORIGINS into the container)
+  # CORS for the Pages origin; an override file, so a CORS_ALLOWED_ORIGINS left in the shell cannot replace it
   cat > "$STATE/override.yml" <<EOF
 services:
   app:
