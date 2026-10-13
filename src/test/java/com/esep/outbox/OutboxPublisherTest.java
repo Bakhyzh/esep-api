@@ -5,12 +5,14 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -79,6 +81,26 @@ class OutboxPublisherTest {
         assertThat(Thread.interrupted()).isTrue();   // also clears it for the next tests
         assertThat(published).isZero();
         verify(repository).markFailed(eq(1L), anyString());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void record_carriesKeyPayloadAndEventHeaders() {
+        OutboxEvent event = new OutboxEvent(1, UUID.randomUUID(), TransferCompletedEvent.TYPE, "10", "{\"a\":1}");
+        when(repository.lockNextBatch(10)).thenReturn(List.of(event));
+        ArgumentCaptor<ProducerRecord<String, String>> sent = ArgumentCaptor.forClass(ProducerRecord.class);
+        when(kafkaTemplate.send(sent.capture())).thenReturn(acked());
+
+        publisher.publishBatch();
+
+        ProducerRecord<String, String> record = sent.getValue();
+        assertThat(record.topic()).isEqualTo("esep.transfers");
+        assertThat(record.key()).isEqualTo("10");   // sender account: per-account ordering
+        assertThat(record.value()).isEqualTo("{\"a\":1}");
+        assertThat(new String(record.headers().lastHeader(OutboxPublisher.EVENT_ID_HEADER).value(), StandardCharsets.UTF_8))
+                .isEqualTo(event.eventId().toString());
+        assertThat(new String(record.headers().lastHeader(OutboxPublisher.EVENT_TYPE_HEADER).value(), StandardCharsets.UTF_8))
+                .isEqualTo("TRANSFER_COMPLETED");
     }
 
     @Test
