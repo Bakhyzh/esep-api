@@ -182,6 +182,33 @@ class ApiContractTest extends IntegrationTest {
                 .andExpect(jsonPath("$.code").value("DUPLICATE_ACCOUNT"));
     }
 
+    // ---------- idempotency over HTTP ----------
+
+    @Test
+    void retryWithTheSameKey_is200WithReplayHeaderAndTheSameTransaction() throws Exception {
+        String alice = login(user(Role.USER));
+        long from = createAccount(alice, "KZT");
+        long to = createAccount(login(user(Role.USER)), "KZT");
+        deposit(login(user(Role.ADMIN)), from, "100");
+        String key = UUID.randomUUID().toString();
+
+        String first = transferWithKey(alice, key, from, to, "30")
+                .andExpect(status().isCreated())
+                .andExpect(header().string(HttpHeaders.LOCATION, containsString("/api/transactions/")))
+                .andExpect(header().doesNotExist("Idempotent-Replayed"))
+                .andReturn().getResponse().getContentAsString();
+        transferWithKey(alice, key, from, to, "30.0000")   // same money, written differently
+                .andExpect(status().isOk())
+                .andExpect(header().string("Idempotent-Replayed", "true"))
+                .andExpect(jsonPath("$.id").value(((Number) JsonPath.read(first, "$.id")).intValue()));
+        transferWithKey(alice, key, from, to, "31")
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.code").value("IDEMPOTENCY_KEY_REUSED"));
+
+        mvc.perform(authorized(get("/api/accounts/" + from), alice))
+                .andExpect(jsonPath("$.balance").value(70.0));   // money moved once
+    }
+
     // ---------- operation history ----------
 
     @Test
@@ -269,6 +296,13 @@ class ApiContractTest extends IntegrationTest {
     private org.springframework.test.web.servlet.ResultActions transfer(String token, long from, long to, String amount)
             throws Exception {
         return mvc.perform(authorized(post("/api/transfers"), token).header("Idempotency-Key", UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"fromAccountId\": " + from + ", \"toAccountId\": " + to + ", \"amount\": " + amount + "}"));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions transferWithKey(String token, String key, long from,
+                                                                            long to, String amount) throws Exception {
+        return mvc.perform(authorized(post("/api/transfers"), token).header("Idempotency-Key", key)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"fromAccountId\": " + from + ", \"toAccountId\": " + to + ", \"amount\": " + amount + "}"));
     }
