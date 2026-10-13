@@ -59,6 +59,17 @@ class ApiContractTest extends IntegrationTest {
     }
 
     @Test
+    void preflight_isCachedByTheBrowserForAnHour() throws Exception {
+        // without Access-Control-Max-Age every POST from the UI costs an extra OPTIONS round trip
+        mvc.perform(options("/api/transfers")
+                        .header(HttpHeaders.ORIGIN, FRONTEND)
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_MAX_AGE, "3600"))
+                .andExpect(header().doesNotExist(HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS));
+    }
+
+    @Test
     void preflightFromUnknownOrigin_isRejected() throws Exception {
         mvc.perform(options("/api/accounts")
                         .header(HttpHeaders.ORIGIN, "https://evil.example")
