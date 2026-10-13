@@ -19,9 +19,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -149,6 +152,24 @@ class SecurityIntegrationTest extends IntegrationTest {
         mvc.perform(authorized(post("/api/deposits"), admin).header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void depositRuleCannotBeBypassedByEncodingOrSlashes() throws Exception {
+        String user = login(registeredUser(Role.USER));
+        long account = createAccount(user, "KZT");
+        String body = "{\"accountId\": " + account + ", \"amount\": 100}";
+
+        // Spring MVC routes by the decoded path; the security rule must see the same path
+        for (String path : List.of("/api/deposit%73", "/api/deposits/", "/api//deposits", "/api/./deposits")) {
+            int status = mvc.perform(authorized(post(URI.create(path)), user)
+                            .header("Idempotency-Key", UUID.randomUUID().toString())
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andReturn().getResponse().getStatus();
+            assertThat(status).as(path).isIn(400, 403, 404);
+        }
+        mvc.perform(authorized(get("/api/accounts/" + account), user))
+                .andExpect(jsonPath("$.balance").value(0.0));
     }
 
     @Test
