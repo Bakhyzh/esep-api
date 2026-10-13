@@ -100,6 +100,17 @@ class ApiContractTest extends IntegrationTest {
     }
 
     @Test
+    void passwordOver72BytesInUtf8_isValidationErrorNotServerError() throws Exception {
+        // 42 Cyrillic letters = 84 bytes: BCrypt would throw on it
+        mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\": \"" + UUID.randomUUID() + "@test.esep\", \"password\": \""
+                                + "пароль".repeat(7) + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_FAILED"))
+                .andExpect(jsonPath("$.errors[0].field").value("password"));
+    }
+
+    @Test
     void malformedJson_isMalformedRequest() throws Exception {
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{oops"))
                 .andExpect(status().isBadRequest())
