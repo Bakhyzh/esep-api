@@ -57,6 +57,10 @@ public class OutboxPublisher {
                 send(event);
                 published.add(event.id());
             } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    // shutdown in progress: keep the flag so the scheduler thread can stop
+                    Thread.currentThread().interrupt();
+                }
                 // stop at the first failure: sending later events first would break per-key ordering
                 log.warn("Outbox event {} not published, will retry: {}", event.eventId(), e.toString());
                 outboxRepository.markFailed(event.id(), e.toString());

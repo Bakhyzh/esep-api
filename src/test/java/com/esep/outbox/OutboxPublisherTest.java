@@ -69,6 +69,19 @@ class OutboxPublisherTest {
     }
 
     @Test
+    void interruptedWhileWaitingForAck_keepsTheInterruptFlag() {
+        when(repository.lockNextBatch(10)).thenReturn(List.of(event(1)));
+        when(kafkaTemplate.send(any(ProducerRecord.class))).thenReturn(new CompletableFuture<>());   // never acked
+
+        Thread.currentThread().interrupt();
+        int published = publisher.publishBatch();
+
+        assertThat(Thread.interrupted()).isTrue();   // also clears it for the next tests
+        assertThat(published).isZero();
+        verify(repository).markFailed(eq(1L), anyString());
+    }
+
+    @Test
     void emptyOutbox_doesNothing() {
         when(repository.lockNextBatch(10)).thenReturn(List.of());
 
