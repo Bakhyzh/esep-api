@@ -29,6 +29,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -110,6 +111,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        // SQLSTATE class 22 (data exception: NUL byte, numeric overflow, date out of range) is also
+        // translated to DataIntegrityViolationException, but it is a bad value, not a conflict:
+        // a 409 tells the client that retrying might help, which it never will
+        if (ex.getMostSpecificCause() instanceof SQLException sql && sql.getSQLState() != null
+                && sql.getSQLState().startsWith("22")) {
+            return problem(HttpStatus.BAD_REQUEST, "Invalid request", "Request contains a value that cannot be stored",
+                    ErrorCode.INVALID_REQUEST);
+        }
         return problem(HttpStatus.CONFLICT, "Data conflict", "Request conflicts with existing data", ErrorCode.CONFLICT);
     }
 
