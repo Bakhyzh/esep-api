@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
@@ -180,6 +181,45 @@ class ApiContractTest extends IntegrationTest {
                         .content("{\"currency\": \"KZT\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("DUPLICATE_ACCOUNT"));
+    }
+
+    // ---------- account lifecycle ----------
+
+    @Test
+    void createdAccount_hasLocationOfItsOwnResource() throws Exception {
+        String token = login(user(Role.USER));
+
+        String location = mvc.perform(authorized(post("/api/accounts"), token).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currency\": \"USD\"}"))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getHeader(HttpHeaders.LOCATION);
+
+        mvc.perform(authorized(get(URI.create(location).getPath()), token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currency").value("USD"));
+    }
+
+    @Test
+    void closingAccount_needsZeroBalance_andAClosedAccountReceivesNothing() throws Exception {
+        String alice = login(user(Role.USER));
+        String bob = login(user(Role.USER));
+        long aliceAccount = createAccount(alice, "KZT");
+        long bobAccount = createAccount(bob, "KZT");
+        deposit(login(user(Role.ADMIN)), aliceAccount, "10");
+
+        mvc.perform(authorized(post("/api/accounts/" + aliceAccount + "/close"), alice))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_NOT_EMPTY"));
+        mvc.perform(authorized(post("/api/accounts/" + bobAccount + "/close"), bob))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CLOSED"))
+                .andExpect(jsonPath("$.closedAt", notNullValue()));
+
+        transfer(alice, aliceAccount, bobAccount, "5")
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_CLOSED"));
+        // a new account in the same currency is allowed once the old one is closed
+        createAccount(bob, "KZT");
     }
 
     // ---------- idempotency over HTTP ----------
