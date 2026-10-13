@@ -25,8 +25,9 @@ class TimeZonesTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"Asia/Almaty", "Europe/Berlin", "America/New_York"})
-    void regions_arePassedThrough(String id) {
+    @ValueSource(strings = {"Asia/Almaty", "Europe/Berlin", "America/New_York", "Etc/GMT-5"})
+    void regionsAndTzDatabaseFixedZones_arePassedThrough(String id) {
+        // Etc/GMT-5 is a zone name in PostgreSQL's tz database, read with the correct sign
         assertThat(TimeZones.requireRegion(ZoneId.of(id))).isEqualTo(ZoneId.of(id));
     }
 }
