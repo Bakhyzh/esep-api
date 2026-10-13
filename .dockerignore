@@ -8,3 +8,8 @@ mvnw.cmd
 postman/
 docs/
 HELP.md
+scripts/
+.github/
+*.md
+.env
+.env.*
