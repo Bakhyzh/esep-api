@@ -54,6 +54,8 @@ public class AnalyticsService {
         ZoneId validZone = TimeZones.requireRegion(zone);
         YearMonth lastMonth = until != null ? until : YearMonth.now(validZone);
         YearMonth firstMonth = lastMonth.minusMonths(months - 1L);
+        SupportedDates.require(lastMonth.atEndOfMonth(), "until");
+        SupportedDates.require(firstMonth.atDay(1), "until");
         ReportScope scope = new ReportScope(owner(currentUser, userId), currency,
                 firstMonth.atDay(1), lastMonth.atEndOfMonth(), validZone);
         return cache.getOrLoad(scope.userId(), "monthly", cacheParams(scope, months), MonthlyComparison.class,

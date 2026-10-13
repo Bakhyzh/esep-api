@@ -138,6 +138,15 @@ class AnalyticsServiceTest {
         assertThat(captor.getValue().toDay()).isEqualTo(LocalDate.parse("2026-04-30"));
     }
 
+    @Test
+    void monthlyComparison_untilBeyondSupportedDates_isInvalidRequest() {
+        assertThatThrownBy(() -> service.monthlyComparison(ME, null, "KZT", ALMATY, YearMonth.of(300000, 1), 6))
+                .isInstanceOf(InvalidRequestException.class);
+        assertThatThrownBy(() -> service.monthlyComparison(ME, null, "KZT", ALMATY, YearMonth.of(1900, 3), 6))
+                .isInstanceOf(InvalidRequestException.class);
+        verifyNoInteractions(repository);
+    }
+
     private ReportScope capturedSpendingScope() {
         ArgumentCaptor<ReportScope> captor = ArgumentCaptor.forClass(ReportScope.class);
         verify(repository).spendingByPeriod(captor.capture(), eq(Period.DAY));
