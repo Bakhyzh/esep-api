@@ -282,7 +282,7 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
 
 ## Testing
 
-`./mvnw test`: 111 tests.
+`./mvnw test`: 230 tests.
 
 - **Unit (Mockito):** services, ledger invariants, lock order (`InOrder`), idempotent replay,
   ownership rules, auth (hashing, same error message), analytics parameter rules.
