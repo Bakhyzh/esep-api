@@ -2,9 +2,13 @@ package com.esep.common.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataIntegrityViolationException;
+import com.esep.ratelimit.RateLimitExceededException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 
 import java.sql.SQLException;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,6 +40,23 @@ class GlobalExceptionHandlerTest {
         ProblemDetail problem = handler.handleDataIntegrity(new DataIntegrityViolationException("no cause"));
 
         assertThat(problem.getStatus()).isEqualTo(409);
+    }
+
+    @Test
+    void rateLimit_retryAfterIsRoundedUpToWholeSeconds() {
+        ResponseEntity<ProblemDetail> response = handler.handleRateLimit(new RateLimitExceededException(Duration.ofMillis(1500)));
+
+        assertThat(response.getStatusCode().value()).isEqualTo(429);
+        assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("2");
+        assertThat(response.getBody().getProperties()).containsEntry("code", "RATE_LIMITED");
+    }
+
+    @Test
+    void rateLimit_retryAfterIsNeverZero() {
+        // "Retry-After: 0" would invite an immediate retry that is still inside the window
+        ResponseEntity<ProblemDetail> response = handler.handleRateLimit(new RateLimitExceededException(Duration.ZERO));
+
+        assertThat(response.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("1");
     }
 
     private static DataIntegrityViolationException integrity(String sqlState) {
