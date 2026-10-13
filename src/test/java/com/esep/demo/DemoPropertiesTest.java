@@ -30,6 +30,19 @@ class DemoPropertiesTest {
                         .getFailure().rootCause().hasMessageContaining("72 bytes"));
     }
 
+    @Test
+    void initialBalanceWithMoreThanFourDecimals_failsOnStartup() {
+        runner.withPropertyValues("esep.demo.initial-balance=100.00001")
+                .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
+    void lowercaseCurrency_failsOnStartup() {
+        runner.withPropertyValues("esep.demo.currency=kzt")
+                .run(context -> assertThat(context).hasFailed()
+                        .getFailure().rootCause().hasMessageContaining("ISO 4217"));
+    }
+
     @Configuration
     @EnableConfigurationProperties(DemoProperties.class)
     static class Config {
