@@ -21,8 +21,9 @@ USER esep
 COPY --from=build /build/app.jar app.jar
 
 EXPOSE 8081
-# respect the container memory limit instead of the host's RAM
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75"
+# respect the container memory limit instead of the host's RAM; on OutOfMemoryError exit at once,
+# so Docker restarts a clean JVM instead of keeping a half-broken one that still answers health checks
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+ExitOnOutOfMemoryError"
 HEALTHCHECK --interval=10s --timeout=3s --start-period=40s --retries=5 \
     CMD wget -qO- http://localhost:8081/actuator/health | grep -q '"status":"UP"' || exit 1
 
