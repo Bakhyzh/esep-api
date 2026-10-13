@@ -81,6 +81,25 @@ class AnalyticsServiceTest {
     }
 
     @Test
+    void dateBeyondWhatPostgresCanStore_isInvalidRequest() {
+        LocalDate farFuture = LocalDate.parse("+300000-01-01");
+        ReportRequest request = new ReportRequest(null, "KZT", farFuture, farFuture.plusDays(1), ALMATY);
+
+        assertThatThrownBy(() -> service.spending(ME, request, Period.DAY))
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessageContaining("9999-12-31");
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void lastRepresentableDate_isInvalidRequestNotAnOverflow() {
+        ReportRequest request = new ReportRequest(null, "KZT", LocalDate.MAX.minusDays(1), LocalDate.MAX, ALMATY);
+
+        assertThatThrownBy(() -> service.top(ME, request, 10))
+                .isInstanceOf(InvalidRequestException.class);
+    }
+
+    @Test
     void offsetZone_isRejectedBecausePostgresInvertsItsSign() {
         ReportRequest request = new ReportRequest(null, "KZT", null, null, ZoneOffset.ofHours(5));
 
