@@ -13,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -43,16 +42,10 @@ public class OperationHistoryService {
             throw new InvalidRequestException("'from' must not be after 'to'");
         }
         ZoneId validZone = TimeZones.requireRegion(zone);
-        HistoryFilter filter = new HistoryFilter(currentUser.id(), accountId,
-                from == null ? null : startOf(from, validZone),
-                to == null ? null : startOf(to.plusDays(1), validZone));
+        HistoryFilter filter = new HistoryFilter(currentUser.id(), accountId, from, to, validZone);
 
         long total = repository.count(filter);
         List<OperationResponse> content = total == 0 ? List.of() : repository.find(filter, page, size);
         return PageResponse.of(content, page, size, total);
-    }
-
-    private static Instant startOf(LocalDate day, ZoneId zone) {
-        return day.atStartOfDay(zone).toInstant();
     }
 }

@@ -10,12 +10,10 @@ import com.esep.transaction.dto.OperationResponse;
 import com.esep.user.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
@@ -63,18 +61,15 @@ class OperationHistoryServiceTest {
     }
 
     @Test
-    void calendarDaysBecomeInstantsInTheRequestedZone_toIsInclusive() {
+    void calendarDaysAndZoneAreHandedToTheQuery() {
         when(repository.count(any())).thenReturn(0L);
 
         service.history(ME, null, LocalDate.parse("2026-03-01"), LocalDate.parse("2026-03-31"),
                 ZoneId.of("Asia/Tokyo"), 0, 20);
 
-        ArgumentCaptor<HistoryFilter> filter = ArgumentCaptor.forClass(HistoryFilter.class);
-        verify(repository).count(filter.capture());
-        // Tokyo is UTC+9 without DST: midnight there is 15:00 UTC the day before; "to" is the start of April 1
-        assertThat(filter.getValue().from()).isEqualTo(Instant.parse("2026-02-28T15:00:00Z"));
-        assertThat(filter.getValue().to()).isEqualTo(Instant.parse("2026-03-31T15:00:00Z"));
-        assertThat(filter.getValue().userId()).isEqualTo(1L);
+        // turned into instants by PostgreSQL, with the same tz rules the reports use
+        verify(repository).count(new HistoryFilter(1L, null, LocalDate.parse("2026-03-01"),
+                LocalDate.parse("2026-03-31"), ZoneId.of("Asia/Tokyo")));
     }
 
     @Test
