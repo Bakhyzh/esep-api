@@ -69,7 +69,7 @@ curl -s "localhost:8081/api/analytics/spending?currency=KZT&period=DAY&zone=Asia
 
 A ready-made **Postman collection** with test scripts is in
 [`postman/esep-api.postman_collection.json`](postman/esep-api.postman_collection.json)
-(42 requests: auth, accounts, transfers, idempotent retries, history, notifications, analytics, error codes).
+(44 requests: auth, accounts, transfers, idempotent retries, history, notifications, analytics, error codes).
 
 ## Local development
 
