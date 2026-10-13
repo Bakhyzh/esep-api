@@ -69,6 +69,13 @@ class SecurityIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void signedTokenWithNonNumericSubject_returns401() throws Exception {
+        mvc.perform(get("/api/accounts").header(HttpHeaders.AUTHORIZATION, "Bearer " + signed("abc", "USER")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
     void registerLoginAndMe_happyPath() throws Exception {
         String email = uniqueEmail();
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
@@ -194,6 +201,18 @@ class SecurityIntegrationTest extends IntegrationTest {
 
     private static String json(String email, String password) {
         return "{\"email\": \"" + email + "\", \"password\": \"" + password + "\"}";
+    }
+
+    // correctly signed by us, but with claims the app never issues
+    private String signed(String subject, String role) {
+        Instant now = Instant.now();
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+                .issuer("esep-api").subject(subject).issuedAt(now).expiresAt(now.plusSeconds(60));
+        if (role != null) {
+            claims.claim("role", role);
+        }
+        return jwtEncoder.encode(
+                JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
 
     private static String uniqueEmail() {
