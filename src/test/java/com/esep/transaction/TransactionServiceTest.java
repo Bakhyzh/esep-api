@@ -3,6 +3,7 @@ package com.esep.transaction;
 import com.esep.common.exception.BusinessRuleException;
 import com.esep.common.exception.ErrorCode;
 import com.esep.security.CurrentUser;
+import com.esep.transaction.dto.DepositRequest;
 import com.esep.transaction.dto.TransactionResponse;
 import com.esep.transaction.dto.TransactionResult;
 import com.esep.transaction.dto.TransferRequest;
@@ -59,5 +60,28 @@ class TransactionServiceTest {
         when(processor.transfer(ME, KEY, REQUEST)).thenThrow(new BusinessRuleException(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds on account 1"));
 
         assertThatThrownBy(() -> service.transfer(ME, KEY, REQUEST)).isInstanceOf(BusinessRuleException.class);
+    }
+
+    @Test
+    void deposit_lostUniqueKeyRace_returnsWinnersResult() {
+        DepositRequest deposit = new DepositRequest(1L, new BigDecimal("10"));
+        CurrentUser admin = new CurrentUser(99L, Role.ADMIN);
+        TransactionResult winner = TransactionResult.replayed(
+                new TransactionResponse(6L, TransactionType.DEPOSIT, TransactionStatus.COMPLETED, null, List.of()));
+        when(processor.deposit(admin, KEY, deposit)).thenThrow(new DataIntegrityViolationException("uq_transactions_created_by_idempotency_key"));
+        when(processor.findReplay(admin, KEY, deposit.fingerprint())).thenReturn(Optional.of(winner));
+
+        assertThat(service.deposit(admin, KEY, deposit)).isSameAs(winner);
+    }
+
+    @Test
+    void lostRaceWithADifferentRequest_isKeyReuseNotAReplay() {
+        when(processor.transfer(ME, KEY, REQUEST)).thenThrow(new DataIntegrityViolationException("uq_transactions_created_by_idempotency_key"));
+        when(processor.findReplay(ME, KEY, REQUEST.fingerprint()))
+                .thenThrow(new BusinessRuleException(ErrorCode.IDEMPOTENCY_KEY_REUSED, "Idempotency-Key was already used"));
+
+        assertThatThrownBy(() -> service.transfer(ME, KEY, REQUEST))
+                .isInstanceOf(BusinessRuleException.class)
+                .extracting("code").isEqualTo(ErrorCode.IDEMPOTENCY_KEY_REUSED);
     }
 }
