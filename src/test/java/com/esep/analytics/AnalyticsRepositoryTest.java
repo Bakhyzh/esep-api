@@ -77,6 +77,18 @@ class AnalyticsRepositoryTest extends IntegrationTest {
     }
 
     @Test
+    void dayBoundsAndDayGrouping_useTheSameTimeZoneRules() {
+        // 18:30 UTC on March 31 is 23:30 in Almaty (UTC+5 since March 2024). A JDK with older tzdata
+        // still thinks UTC+6 (00:30 on April 1); bounds computed in Java then disagreed with the
+        // grouping done by PostgreSQL and the entry fell out of a report that ends on March 31
+        transfer(kztAccount, otherAccount, "10", "2026-03-31T18:30:00Z");
+
+        assertThat(repository.spendingByPeriod(scope("2026-03-01", "2026-03-31", ALMATY), Period.DAY))
+                .extracting(SpendingPoint::periodStart).containsExactly(LocalDate.parse("2026-03-31"));
+        assertThat(repository.spendingByPeriod(scope("2026-04-01", "2026-04-30", ALMATY), Period.DAY)).isEmpty();
+    }
+
+    @Test
     void topTransactions_orderedByAmountWithDenseRankAndReceiver() {
         long receiver2 = insertAccount(insertUser(), "KZT");
         transfer(kztAccount, otherAccount, "300", "2026-03-02T10:00:00Z");

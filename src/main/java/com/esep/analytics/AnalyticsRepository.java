@@ -9,12 +9,10 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 
 /**
@@ -28,6 +26,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AnalyticsRepository {
 
+    // calendar days -> instants by PostgreSQL's time zone rules, the same rules AT TIME ZONE uses for
+    // grouping below. Computed in Java they came from the JDK's tzdata, which can be older or newer
+    // (Asia/Almaty moved from UTC+6 to UTC+5 in 2024), and the bounds then cut days in the wrong place.
+    // The expressions are constant for the query, so the index on created_at is still used.
+    private static final String CREATED_IN_RANGE = """
+              AND e.created_at >= CAST(:fromDay AS timestamp) AT TIME ZONE :zone
+              AND e.created_at < (CAST(:toDay AS timestamp) + INTERVAL '1 day') AT TIME ZONE :zone
+            """;
+
     // shared filter; matches the partial index ix_ledger_entries_debit_account_created (V6)
     private static final String USER_DEBITS = """
             FROM ledger_entries e
@@ -35,9 +42,7 @@ public class AnalyticsRepository {
             WHERE a.user_id = :userId
               AND a.currency = :currency
               AND e.direction = 'DEBIT'
-              AND e.created_at >= :from
-              AND e.created_at < :to
-            """;
+            """ + CREATED_IN_RANGE;
 
     private final NamedParameterJdbcTemplate jdbc;
 
@@ -71,8 +76,7 @@ public class AnalyticsRepository {
                 WHERE a.user_id = :userId
                   AND a.currency = :currency
                   AND e.direction = 'DEBIT'
-                  AND e.created_at >= :from
-                  AND e.created_at < :to
+                """ + CREATED_IN_RANGE.indent(4) + """
                 ORDER BY e.amount DESC, e.transaction_id
                 LIMIT :limit
                 """;
@@ -172,10 +176,7 @@ public class AnalyticsRepository {
                         rs.getBigDecimal("change_percent")));
     }
 
-    /**
-     * Whose money, which currency, which calendar days (inclusive) in which time zone.
-     * Days are converted to UTC instants here, so the index on created_at can be used directly.
-     */
+    /** Whose money, which currency, which calendar days (inclusive) in which time zone. */
     public record ReportScope(Long userId, String currency, LocalDate fromDay, LocalDate toDay, ZoneId zone) {
 
         ReportScope withFromDay(LocalDate newFromDay) {
@@ -188,14 +189,7 @@ public class AnalyticsRepository {
                     .addValue("currency", currency)
                     .addValue("zone", zone.getId())
                     .addValue("fromDay", fromDay)
-                    .addValue("toDay", toDay)
-                    .addValue("from", utc(fromDay.atStartOfDay(zone).toInstant()))
-                    // exclusive upper bound: start of the day AFTER toDay
-                    .addValue("to", utc(toDay.plusDays(1).atStartOfDay(zone).toInstant()));
-        }
-
-        private static OffsetDateTime utc(Instant instant) {
-            return instant.atOffset(ZoneOffset.UTC);
+                    .addValue("toDay", toDay);
         }
     }
 }
