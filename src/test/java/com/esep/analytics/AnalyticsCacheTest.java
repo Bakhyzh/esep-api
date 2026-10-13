@@ -18,7 +18,11 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
@@ -72,6 +76,33 @@ class AnalyticsCacheTest {
         });
 
         assertThat(result).containsExactly(new SpendingPoint(LocalDate.parse("2026-03-01"), new BigDecimal("10.5000"), 2));
+    }
+
+    @Test
+    void cacheMiss_storesTheResultWithTtlUnderTheCurrentGeneration() {
+        when(values.get("analytics:1:generation")).thenReturn(null);   // never invalidated: generation 0
+
+        cache.getOrLoad(1L, "top", "p", SpendingPoint.class, List::of);
+
+        verify(values).set(eq("analytics:1:v0:top:p"), eq("[]"), eq(Duration.ofMinutes(5)));
+    }
+
+    @Test
+    void writeFailure_stillReturnsTheFreshResult() {
+        doThrow(new RedisConnectionFailureException("down")).when(values).set(anyString(), anyString(), any(Duration.class));
+
+        List<SpendingPoint> result = cache.getOrLoad(1L, "spending", "p", SpendingPoint.class,
+                () -> List.of(new SpendingPoint(LocalDate.parse("2026-03-01"), BigDecimal.ONE, 1)));
+
+        assertThat(result).hasSize(1);
+    }
+
+    @Test
+    void invalidate_bumpsTheGenerationAndKeepsItAlive() {
+        cache.invalidateUser(7L);
+
+        verify(values).increment("analytics:7:generation");
+        verify(redis).expire(eq("analytics:7:generation"), any(Duration.class));
     }
 
     @Test
