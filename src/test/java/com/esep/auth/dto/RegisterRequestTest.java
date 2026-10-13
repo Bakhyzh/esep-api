@@ -52,6 +52,14 @@ class RegisterRequestTest {
         assertThat(violations("short")).hasSize(1);
     }
 
+    @Test
+    void emailWithNulCharacter_isRejected() {
+        // PostgreSQL text cannot store U+0000; it must never reach the existsByEmail query
+        assertThat(validator.validate(new RegisterRequest("a\u0000b@esep.dev", "password123")))
+                .extracting(v -> v.getPropertyPath().toString())
+                .contains("email");
+    }
+
     private static Set<ConstraintViolation<RegisterRequest>> violations(String password) {
         return validator.validate(new RegisterRequest("user@esep.dev", password));
     }
