@@ -11,6 +11,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
+import org.springframework.web.util.UrlPathHelper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -32,6 +33,10 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             "/api/auth/login", "login",
             "/api/auth/register", "register");
 
+    // decoded and without the context path, i.e. the path Spring MVC routes by: getRequestURI() is raw,
+    // so "/api/auth/logi%6E" reached the login endpoint without ever being counted
+    private static final UrlPathHelper PATHS = UrlPathHelper.defaultInstance;
+
     private final RedisRateLimiter limiter;
     private final RateLimitProperties properties;
     private final HandlerExceptionResolver resolver;
@@ -47,13 +52,13 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !properties.enabled()
                 || !"POST".equals(request.getMethod())
-                || !LIMITED.containsKey(request.getRequestURI());
+                || !LIMITED.containsKey(path(request));
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String key = "esep:rate-limit:" + LIMITED.get(request.getRequestURI()) + ":" + request.getRemoteAddr();
+        String key = "esep:rate-limit:" + LIMITED.get(path(request)) + ":" + request.getRemoteAddr();
         RedisRateLimiter.Decision decision;
         try {
             decision = limiter.tryAcquire(key, properties.maxRequests(), properties.window());
@@ -64,10 +69,14 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             return;
         }
         if (!decision.allowed()) {
-            log.info("Rate limit exceeded: {} from {}", request.getRequestURI(), request.getRemoteAddr());
+            log.info("Rate limit exceeded: {} from {}", path(request), request.getRemoteAddr());
             resolver.resolveException(request, response, null, new RateLimitExceededException(decision.retryAfter()));
             return;
         }
         chain.doFilter(request, response);
+    }
+
+    private static String path(HttpServletRequest request) {
+        return PATHS.getPathWithinApplication(request);
     }
 }
