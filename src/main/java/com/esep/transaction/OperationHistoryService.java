@@ -3,6 +3,7 @@ package com.esep.transaction;
 import com.esep.account.AccountRepository;
 import com.esep.common.exception.InvalidRequestException;
 import com.esep.common.exception.ResourceNotFoundException;
+import com.esep.common.time.SupportedDates;
 import com.esep.common.time.TimeZones;
 import com.esep.common.web.PageResponse;
 import com.esep.security.CurrentUser;
@@ -36,6 +37,8 @@ public class OperationHistoryService {
         if (accountId != null && !accountRepository.existsByIdAndUser_Id(accountId, currentUser.id())) {
             throw new ResourceNotFoundException("Account", accountId);   // 404: do not reveal other accounts
         }
+        SupportedDates.require(from, "from");
+        SupportedDates.require(to, "to");
         if (from != null && to != null && from.isAfter(to)) {
             throw new InvalidRequestException("'from' must not be after 'to'");
         }
