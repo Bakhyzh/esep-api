@@ -108,7 +108,10 @@ deploy_site() {
   TOKEN=$(github_token)
   [[ -n "$TOKEN" ]] || die "no GitHub token: set GITHUB_TOKEN or log in with git"
   log "VITE_API_URL = $URL"
-  gh_api PATCH /actions/variables/VITE_API_URL "{\"name\":\"VITE_API_URL\",\"value\":\"$URL\"}" >/dev/null
+  local variable="{\"name\":\"VITE_API_URL\",\"value\":\"$URL\"}"
+  # PATCH updates an existing variable; on a fresh repository it is 404 and the variable must be created
+  gh_api PATCH /actions/variables/VITE_API_URL "$variable" >/dev/null 2>&1 \
+    || gh_api POST /actions/variables "$variable" >/dev/null
   local before run status
   before=$(gh_api GET "/actions/workflows/deploy.yml/runs?per_page=1" | python3 -c 'import json,sys;r=json.load(sys.stdin)["workflow_runs"];print(r[0]["id"] if r else 0)')
   gh_api POST /actions/workflows/deploy.yml/dispatches '{"ref":"main"}' >/dev/null
