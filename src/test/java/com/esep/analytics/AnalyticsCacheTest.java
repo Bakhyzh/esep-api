@@ -62,6 +62,19 @@ class AnalyticsCacheTest {
     }
 
     @Test
+    void cacheHit_doesNotTouchTheDatabase() {
+        when(values.get("analytics:1:generation")).thenReturn("3");
+        when(values.get("analytics:1:v3:spending:p"))
+                .thenReturn("[{\"periodStart\":\"2026-03-01\",\"total\":10.5000,\"operations\":2}]");
+
+        List<SpendingPoint> result = cache.getOrLoad(1L, "spending", "p", SpendingPoint.class, () -> {
+            throw new AssertionError("must not load on a hit");
+        });
+
+        assertThat(result).containsExactly(new SpendingPoint(LocalDate.parse("2026-03-01"), new BigDecimal("10.5000"), 2));
+    }
+
+    @Test
     void zeroTtl_isRejectedOnStartup() {
         assertThatThrownBy(() -> new AnalyticsCache(redis, JsonMapper.builder().build(), Duration.ZERO))
                 .isInstanceOf(IllegalArgumentException.class)
