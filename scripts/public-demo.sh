@@ -86,7 +86,8 @@ start_tunnel() {
 
   URL=""
   for _ in $(seq 1 30); do
-    URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$STATE/tunnel.log" | head -1 || true)
+    # api.trycloudflare.com is the service cloudflared asks for a tunnel; it shows up in error lines
+    URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' "$STATE/tunnel.log" | grep -v '^https://api\.' | head -1 || true)
     [[ -n "$URL" ]] && break
     sleep 2
   done
