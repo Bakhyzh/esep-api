@@ -180,6 +180,25 @@ class ApiContractTest extends IntegrationTest {
     }
 
     @Test
+    void offsetTimeZone_isInvalidRequestOverHttp() throws Exception {
+        String token = login(user(Role.USER));
+
+        for (String zone : new String[]{"+05:00", "UTC+05:00"}) {
+            mvc.perform(authorized(get("/api/analytics/spending").param("currency", "KZT").param("zone", zone), token))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        }
+    }
+
+    @Test
+    void accountInCurrencyWithoutFunding_isUnsupportedOverHttp() throws Exception {
+        mvc.perform(authorized(post("/api/accounts"), login(user(Role.USER))).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"currency\": \"XTS\"}"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.code").value("UNSUPPORTED_CURRENCY"));
+    }
+
+    @Test
     void businessRule_hasSpecificCode() throws Exception {
         String token = login(user(Role.USER));
         long from = createAccount(token, "KZT");
