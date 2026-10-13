@@ -306,6 +306,7 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | browser origins allowed to call the API |
 | `RATE_LIMIT_ENABLED` / `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW` | `true` / `10` / `1m` | auth rate limit |
 | `DEMO_USER_ENABLED` / `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` | `false` / empty / empty | optional demo user |
+| `DEMO_USER_INITIAL_BALANCE` | `100000` | KZT deposited once on the demo user's account |
 
 Production values: [`.env.example`](.env.example) and [docs/DEPLOY.md](docs/DEPLOY.md).
 
