@@ -153,6 +153,10 @@ Schema changes only through Flyway migrations (`ddl-auto: validate`):
 - `BigDecimal` in Java and `NUMERIC(19,4)` in the database, never `double`.
 - Amounts with more than 4 decimal places are **rejected, not rounded** (`RoundingMode.UNNECESSARY`).
 - Balances are compared with `compareTo`, not `equals` (`0.0000` vs `0`).
+- A posting that would push a balance past ±999 999 999 999 999.9999 (the column limit) is rejected
+  with `422 BALANCE_LIMIT_EXCEEDED` before it reaches the database.
+- Accounts can be opened only in currencies that have a system funding account (KZT, USD, EUR);
+  any other ISO code is `422 UNSUPPORTED_CURRENCY`, since such an account could never be funded.
 
 ### Double entry
 - `LedgerTransaction` is the aggregate root: entries are created only through it, and it refuses to
@@ -263,6 +267,13 @@ Every error has the same shape (RFC 9457 `application/problem+json` plus a stabl
 
 Clients switch on `code` (`INSUFFICIENT_FUNDS`, `CURRENCY_MISMATCH`, `IDEMPOTENCY_KEY_REUSED`, `UNAUTHORIZED`, ...;
 full list in `ErrorCode`), never on `detail`. `errors` is present only for `VALIDATION_FAILED`.
+
+Input rules that are easy to miss:
+- dates (`from`, `to`, `until`) must lie within 1900-01-01..9999-12-31, otherwise `400 INVALID_REQUEST`;
+- `zone` must be a region id like `Asia/Almaty` or `UTC`; fixed offsets (`+05:00`, `UTC+05:00`) are rejected,
+  because PostgreSQL would read them with the sign inverted;
+- passwords are limited to 72 **bytes** in UTF-8 (a BCrypt limit), i.e. 36 Cyrillic letters;
+- a 401 carries `WWW-Authenticate: Bearer` (with `error="invalid_token"` for a bad token).
 
 ### CORS
 
