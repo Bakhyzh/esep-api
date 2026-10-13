@@ -5,6 +5,7 @@ import com.esep.auth.dto.RegisterRequest;
 import com.esep.auth.dto.TokenResponse;
 import com.esep.auth.dto.UserResponse;
 import com.esep.common.exception.ConflictException;
+import com.esep.common.exception.ResourceNotFoundException;
 import com.esep.security.TokenService;
 import com.esep.user.Role;
 import com.esep.user.User;
@@ -106,6 +107,13 @@ class AuthServiceTest {
                 .isInstanceOf(BadCredentialsException.class)
                 .hasMessage("Invalid email or password");
         verify(tokenService, never()).issue(any());
+    }
+
+    @Test
+    void me_deletedUser_isNotFound() {
+        when(userRepository.findById(5L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.me(5L)).isInstanceOf(ResourceNotFoundException.class);
     }
 
     private static User withId(User user, Long id) {
