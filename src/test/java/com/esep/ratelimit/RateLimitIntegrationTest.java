@@ -9,6 +9,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import java.net.URI;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -70,6 +71,19 @@ class RateLimitIntegrationTest extends ProdFeaturesIntegrationTest {
             register(ip).andExpect(status().isBadRequest());   // invalid body still counts as an attempt
         }
         register(ip).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void percentEncodedPath_isLimitedLikeThePlainOne() throws Exception {
+        // Spring MVC decodes the path before matching, so /api/auth/logi%6E is the login endpoint too
+        String ip = uniqueIp();
+        URI encodedLogin = URI.create("/api/auth/logi%6E");
+        for (int i = 0; i < 3; i++) {
+            mvc.perform(post(encodedLogin).with(fromIp(ip)).contentType(MediaType.APPLICATION_JSON).content(WRONG_LOGIN))
+                    .andExpect(status().isUnauthorized());
+        }
+
+        login(ip).andExpect(status().isTooManyRequests());
     }
 
     private ResultActions login(String ip) throws Exception {

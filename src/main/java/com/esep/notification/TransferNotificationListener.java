@@ -23,14 +23,20 @@ public class TransferNotificationListener {
     }
 
     private TransferCompletedEvent parse(String payload) {
+        // a tombstone (null value): readValue(null) throws IllegalArgumentException, which would be retried
+        if (payload == null) {
+            throw new InvalidEventException("TransferCompletedEvent has no payload", null);
+        }
         TransferCompletedEvent event;
         try {
             event = jsonMapper.readValue(payload, TransferCompletedEvent.class);
         } catch (JacksonException e) {
             throw new InvalidEventException("Malformed TransferCompletedEvent", e);
         }
+        // everything the notification texts use: otherwise users would read "You sent 100 null"
         if (event == null || event.eventId() == null || event.fromUserId() == null
-                || event.toUserId() == null || event.amount() == null) {
+                || event.toUserId() == null || event.amount() == null || event.currency() == null
+                || event.fromAccountId() == null || event.toAccountId() == null) {
             throw new InvalidEventException("TransferCompletedEvent misses required fields", null);
         }
         return event;

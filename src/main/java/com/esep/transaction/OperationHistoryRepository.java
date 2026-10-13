@@ -6,9 +6,9 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import java.time.Instant;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.util.List;
 
 @Repository
@@ -60,11 +60,13 @@ public class OperationHistoryRepository {
         if (filter.accountId() != null) {
             where.append("  AND e.account_id = :accountId\n");
         }
-        if (filter.from() != null) {
-            where.append("  AND e.created_at >= :from\n");
+        // calendar days -> instants by PostgreSQL's tzdata, exactly as the analytics reports do,
+        // so a day in the history and the same day in a report always contain the same entries
+        if (filter.fromDay() != null) {
+            where.append("  AND e.created_at >= CAST(:fromDay AS timestamp) AT TIME ZONE :zone\n");
         }
-        if (filter.to() != null) {
-            where.append("  AND e.created_at < :to\n");
+        if (filter.toDay() != null) {
+            where.append("  AND e.created_at < (CAST(:toDay AS timestamp) + INTERVAL '1 day') AT TIME ZONE :zone\n");
         }
         return where.toString();
     }
@@ -73,15 +75,12 @@ public class OperationHistoryRepository {
         return new MapSqlParameterSource()
                 .addValue("userId", filter.userId())
                 .addValue("accountId", filter.accountId())
-                .addValue("from", utc(filter.from()))
-                .addValue("to", utc(filter.to()));
+                .addValue("fromDay", filter.fromDay())
+                .addValue("toDay", filter.toDay())
+                .addValue("zone", filter.zone().getId());
     }
 
-    private static OffsetDateTime utc(Instant instant) {
-        return instant == null ? null : instant.atOffset(ZoneOffset.UTC);
-    }
-
-    /** from inclusive, to exclusive, both optional. */
-    public record HistoryFilter(Long userId, Long accountId, Instant from, Instant to) {
+    /** Calendar days in {@code zone}, both inclusive and optional. */
+    public record HistoryFilter(Long userId, Long accountId, LocalDate fromDay, LocalDate toDay, ZoneId zone) {
     }
 }

@@ -3,6 +3,7 @@ package com.esep.transaction;
 import com.esep.account.AccountRepository;
 import com.esep.common.exception.InvalidRequestException;
 import com.esep.common.exception.ResourceNotFoundException;
+import com.esep.common.time.SupportedDates;
 import com.esep.common.time.TimeZones;
 import com.esep.common.web.PageResponse;
 import com.esep.security.CurrentUser;
@@ -12,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
@@ -36,20 +36,16 @@ public class OperationHistoryService {
         if (accountId != null && !accountRepository.existsByIdAndUser_Id(accountId, currentUser.id())) {
             throw new ResourceNotFoundException("Account", accountId);   // 404: do not reveal other accounts
         }
+        SupportedDates.require(from, "from");
+        SupportedDates.require(to, "to");
         if (from != null && to != null && from.isAfter(to)) {
             throw new InvalidRequestException("'from' must not be after 'to'");
         }
         ZoneId validZone = TimeZones.requireRegion(zone);
-        HistoryFilter filter = new HistoryFilter(currentUser.id(), accountId,
-                from == null ? null : startOf(from, validZone),
-                to == null ? null : startOf(to.plusDays(1), validZone));
+        HistoryFilter filter = new HistoryFilter(currentUser.id(), accountId, from, to, validZone);
 
         long total = repository.count(filter);
         List<OperationResponse> content = total == 0 ? List.of() : repository.find(filter, page, size);
         return PageResponse.of(content, page, size, total);
-    }
-
-    private static Instant startOf(LocalDate day, ZoneId zone) {
-        return day.atStartOfDay(zone).toInstant();
     }
 }

@@ -35,6 +35,13 @@ class JwtPropertiesTest {
                 .run(context -> assertThat(context).hasNotFailed().hasSingleBean(JwtProperties.class));
     }
 
+    @Test
+    void zeroTtl_contextFails() {
+        runner.withPropertyValues("esep.security.jwt.secret=0123456789abcdef0123456789abcdef",
+                        "esep.security.jwt.ttl=0s")
+                .run(context -> assertThat(context).hasFailed());
+    }
+
     @Configuration
     @EnableConfigurationProperties(JwtProperties.class)
     static class Config {

@@ -89,6 +89,7 @@ services:
       DEMO_USER_ENABLED: ${DEMO_USER_ENABLED:-false}
       DEMO_USER_EMAIL: ${DEMO_USER_EMAIL:-}
       DEMO_USER_PASSWORD: ${DEMO_USER_PASSWORD:-}
+      DEMO_USER_INITIAL_BALANCE: ${DEMO_USER_INITIAL_BALANCE:-100000}
       # heap = 70% of the container limit; the rest is metaspace, threads, direct buffers
       JAVA_OPTS: "-XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError"
     # graceful shutdown: Spring waits up to 20s for in-flight requests, Docker must wait longer before SIGKILL

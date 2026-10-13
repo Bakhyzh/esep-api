@@ -25,6 +25,10 @@ jobs:
       - name: Test
         run: ./mvnw -B verify
 
+      # the demo script is not run in CI; at least make sure a syntax error cannot be merged
+      - name: Check shell scripts
+        run: for script in scripts/*.sh; do bash -n "$script"; done
+
       - name: Validate compose files
         run: |
           docker compose config -q

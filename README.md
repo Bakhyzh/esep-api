@@ -69,7 +69,7 @@ curl -s "localhost:8081/api/analytics/spending?currency=KZT&period=DAY&zone=Asia
 
 A ready-made **Postman collection** with test scripts is in
 [`postman/esep-api.postman_collection.json`](postman/esep-api.postman_collection.json)
-(42 requests: auth, accounts, transfers, idempotent retries, history, notifications, analytics, error codes).
+(44 requests: auth, accounts, transfers, idempotent retries, history, notifications, analytics, error codes).
 
 ## Local development
 
@@ -153,6 +153,10 @@ Schema changes only through Flyway migrations (`ddl-auto: validate`):
 - `BigDecimal` in Java and `NUMERIC(19,4)` in the database, never `double`.
 - Amounts with more than 4 decimal places are **rejected, not rounded** (`RoundingMode.UNNECESSARY`).
 - Balances are compared with `compareTo`, not `equals` (`0.0000` vs `0`).
+- A posting that would push a balance past ±999 999 999 999 999.9999 (the column limit) is rejected
+  with `422 BALANCE_LIMIT_EXCEEDED` before it reaches the database.
+- Accounts can be opened only in currencies that have a system funding account (KZT, USD, EUR);
+  any other ISO code is `422 UNSUPPORTED_CURRENCY`, since such an account could never be funded.
 
 ### Double entry
 - `LedgerTransaction` is the aggregate root: entries are created only through it, and it refuses to
@@ -242,7 +246,6 @@ aware day boundaries. Index design and `EXPLAIN ANALYZE` on 2M ledger entries:
 | GET | `/api/transactions/{id}` | participants; ADMIN |
 | GET | `/api/analytics/spending` · `top-transactions` · `moving-average` · `monthly-comparison` | own data; ADMIN: `?userId=` |
 | GET | `/api/notifications` | own notifications |
-
 | GET | `/api/transactions?accountId=&from=&to=&page=&size=` | own operation history (paginated) |
 
 ### Errors
@@ -265,6 +268,13 @@ Every error has the same shape (RFC 9457 `application/problem+json` plus a stabl
 Clients switch on `code` (`INSUFFICIENT_FUNDS`, `CURRENCY_MISMATCH`, `IDEMPOTENCY_KEY_REUSED`, `UNAUTHORIZED`, ...;
 full list in `ErrorCode`), never on `detail`. `errors` is present only for `VALIDATION_FAILED`.
 
+Input rules that are easy to miss:
+- dates (`from`, `to`, `until`) must lie within 1900-01-01..9999-12-31, otherwise `400 INVALID_REQUEST`;
+- `zone` must be a region id like `Asia/Almaty` or `UTC`; fixed offsets (`+05:00`, `UTC+05:00`) are rejected,
+  because PostgreSQL would read them with the sign inverted;
+- passwords are limited to 72 **bytes** in UTF-8 (a BCrypt limit), i.e. 36 Cyrillic letters;
+- a 401 carries `WWW-Authenticate: Bearer` (with `error="invalid_token"` for a bad token).
+
 ### CORS
 
 The API accepts browser calls from `CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`, the Vite dev server).
@@ -272,7 +282,7 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
 
 ## Testing
 
-`./mvnw test`: 111 tests.
+`./mvnw test`: 230 tests.
 
 - **Unit (Mockito):** services, ledger invariants, lock order (`InOrder`), idempotent replay,
   ownership rules, auth (hashing, same error message), analytics parameter rules.
@@ -307,6 +317,7 @@ The frontend lives in a separate repository: [esep-web](https://github.com/Bakhy
 | `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | browser origins allowed to call the API |
 | `RATE_LIMIT_ENABLED` / `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW` | `true` / `10` / `1m` | auth rate limit |
 | `DEMO_USER_ENABLED` / `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` | `false` / empty / empty | optional demo user |
+| `DEMO_USER_INITIAL_BALANCE` | `100000` | KZT deposited once on the demo user's account |
 
 Production values: [`.env.example`](.env.example) and [docs/DEPLOY.md](docs/DEPLOY.md).
 

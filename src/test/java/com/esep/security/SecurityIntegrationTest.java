@@ -19,11 +19,17 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -45,13 +51,16 @@ class SecurityIntegrationTest extends IntegrationTest {
     void protectedEndpointWithoutToken_returns401ProblemJson() throws Exception {
         mvc.perform(get("/api/accounts"))
                 .andExpect(status().isUnauthorized())
+                .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, startsWith("Bearer")))
                 .andExpect(jsonPath("$.title").value("Unauthorized"));
     }
 
     @Test
     void garbageToken_returns401() throws Exception {
         mvc.perform(get("/api/accounts").header(HttpHeaders.AUTHORIZATION, "Bearer not.a.jwt"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, containsString("error=\"invalid_token\"")))
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -66,6 +75,20 @@ class SecurityIntegrationTest extends IntegrationTest {
 
         mvc.perform(get("/api/accounts").header(HttpHeaders.AUTHORIZATION, "Bearer " + expired))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void signedTokenWithNonNumericSubject_returns401() throws Exception {
+        mvc.perform(get("/api/accounts").header(HttpHeaders.AUTHORIZATION, "Bearer " + signed("abc", "USER")))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
+    void signedTokenWithoutRole_returns401() throws Exception {
+        mvc.perform(get("/api/accounts").header(HttpHeaders.AUTHORIZATION, "Bearer " + signed("1", null)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     @Test
@@ -132,6 +155,24 @@ class SecurityIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void depositRuleCannotBeBypassedByEncodingOrSlashes() throws Exception {
+        String user = login(registeredUser(Role.USER));
+        long account = createAccount(user, "KZT");
+        String body = "{\"accountId\": " + account + ", \"amount\": 100}";
+
+        // Spring MVC routes by the decoded path; the security rule must see the same path
+        for (String path : List.of("/api/deposit%73", "/api/deposits/", "/api//deposits", "/api/./deposits")) {
+            int status = mvc.perform(authorized(post(URI.create(path)), user)
+                            .header("Idempotency-Key", UUID.randomUUID().toString())
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andReturn().getResponse().getStatus();
+            assertThat(status).as(path).isIn(400, 403, 404);
+        }
+        mvc.perform(authorized(get("/api/accounts/" + account), user))
+                .andExpect(jsonPath("$.balance").value(0.0));
+    }
+
+    @Test
     void transferFromSomebodyElsesAccount_returns404AndTransactionIsHidden() throws Exception {
         String admin = login(registeredUser(Role.ADMIN));
         String alice = login(registeredUser(Role.USER));
@@ -194,6 +235,18 @@ class SecurityIntegrationTest extends IntegrationTest {
 
     private static String json(String email, String password) {
         return "{\"email\": \"" + email + "\", \"password\": \"" + password + "\"}";
+    }
+
+    // correctly signed by us, but with claims the app never issues
+    private String signed(String subject, String role) {
+        Instant now = Instant.now();
+        JwtClaimsSet.Builder claims = JwtClaimsSet.builder()
+                .issuer("esep-api").subject(subject).issuedAt(now).expiresAt(now.plusSeconds(60));
+        if (role != null) {
+            claims.claim("role", role);
+        }
+        return jwtEncoder.encode(
+                JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims.build())).getTokenValue();
     }
 
     private static String uniqueEmail() {

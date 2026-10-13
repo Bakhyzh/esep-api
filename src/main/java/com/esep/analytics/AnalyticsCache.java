@@ -35,6 +35,10 @@ public class AnalyticsCache {
 
     public AnalyticsCache(StringRedisTemplate redis, JsonMapper jsonMapper,
                           @Value("${esep.analytics.cache.ttl}") Duration ttl) {
+        // Redis rejects SET with a zero or negative expiry; every write would fail and only log a warning
+        if (ttl.isZero() || ttl.isNegative()) {
+            throw new IllegalArgumentException("esep.analytics.cache.ttl must be positive, got " + ttl);
+        }
         this.redis = redis;
         this.jsonMapper = jsonMapper;
         this.ttl = ttl;

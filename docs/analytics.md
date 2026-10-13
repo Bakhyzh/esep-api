@@ -27,9 +27,12 @@ Common parameters: `from`, `to` (calendar days, inclusive, default: last 30 days
 - **LAG for the first month.** One extra month is loaded so the first reported month has a
   previous value. `NULLIF(previous, 0)` returns `null` percent instead of a division error.
 - **Time zones.** Day boundaries are computed in the requested zone
-  (`created_at AT TIME ZONE :zone`), while the `WHERE` filter compares `created_at`
-  with UTC instants, so the index is still usable. Offsets like `+05:00` are rejected:
-  PostgreSQL treats them as POSIX zones with an **inverted sign**.
+  (`created_at AT TIME ZONE :zone`). The `WHERE` filter turns the first and last calendar day into
+  instants in SQL too (`CAST(:fromDay AS timestamp) AT TIME ZONE :zone`): one set of time zone rules
+  (PostgreSQL's tzdata) for both, so a JDK with older or newer tzdata cannot shift the bounds.
+  The bound is a constant for the query, so `created_at` is still compared directly and the index is used.
+  Offsets like `+05:00` (and `UTC+05:00`) are rejected: PostgreSQL treats them as POSIX zones with an
+  **inverted sign**.
 
 ## EXPLAIN: spending of one user for 90 days
 

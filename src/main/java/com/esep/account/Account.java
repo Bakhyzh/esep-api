@@ -30,6 +30,9 @@ import java.util.Currency;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Account {
 
+    /** NUMERIC(19,4) holds at most 15 digits before the point, in both directions. */
+    static final BigDecimal BALANCE_LIMIT = new BigDecimal("999999999999999.9999");
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -80,13 +83,14 @@ public class Account {
         if (type == AccountType.USER && balance.compareTo(amount) < 0) {
             throw new BusinessRuleException(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds on account " + id);
         }
-        this.balance = balance.subtract(amount);
+        // a system account goes negative by every deposit, so it can hit the limit from below
+        this.balance = withinLimit(balance.subtract(amount));
     }
 
     /** Money enters the account. Same rule as debit: only via a ledger posting. */
     public void credit(BigDecimal amount) {
         requireActive();
-        this.balance = balance.add(amount);
+        this.balance = withinLimit(balance.add(amount));
     }
 
     public boolean isSystem() {
@@ -107,6 +111,16 @@ public class Account {
         }
         this.status = AccountStatus.CLOSED;
         this.closedAt = Instant.now();
+    }
+
+    // checked here, not left to the database: there it is a "numeric field overflow"
+    // that reaches the client as a generic 409 data conflict
+    private BigDecimal withinLimit(BigDecimal newBalance) {
+        if (newBalance.abs().compareTo(BALANCE_LIMIT) > 0) {
+            throw new BusinessRuleException(ErrorCode.BALANCE_LIMIT_EXCEEDED,
+                    "Balance of account " + id + " would exceed " + BALANCE_LIMIT.toPlainString());
+        }
+        return newBalance;
     }
 
     private void requireActive() {

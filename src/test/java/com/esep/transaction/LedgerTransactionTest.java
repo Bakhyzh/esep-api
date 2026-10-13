@@ -12,6 +12,7 @@ import static com.esep.transaction.TestAccounts.user;
 import static com.esep.transaction.TestAccounts.userAccount;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 class LedgerTransactionTest {
 
@@ -100,5 +101,38 @@ class LedgerTransactionTest {
         assertThat(tx.getType()).isEqualTo(TransactionType.DEPOSIT);
         assertThat(funding.getBalance()).isEqualByComparingTo("-500");
         assertThat(target.getBalance()).isEqualByComparingTo("500");
+    }
+
+    @Test
+    void transfer_fromClosedAccount_isRejectedAndNothingMoves() {
+        Account from = userAccount(1, KZT, "0.0000");
+        from.close();
+        Account to = userAccount(2, KZT, "0.0000");
+
+        assertThatThrownBy(() -> LedgerTransaction.transfer(CREATOR, "key-1", "hash", from, to, new BigDecimal("10")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("closed");
+        assertThat(to.getBalance()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void entries_cannotBeModifiedFromOutside() {
+        LedgerTransaction tx = LedgerTransaction.transfer(CREATOR, "key-1", "hash",
+                userAccount(1, KZT, "10.0000"), userAccount(2, KZT, "0.0000"), new BigDecimal("10"));
+
+        // the aggregate guarantees "entries sum to zero"; an add() from outside would break it unnoticed
+        assertThatThrownBy(() -> tx.getEntries().clear()).isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void signedAmount_isNegativeForDebitAndPositiveForCredit() {
+        LedgerTransaction tx = LedgerTransaction.transfer(CREATOR, "key-1", "hash",
+                userAccount(1, KZT, "10.0000"), userAccount(2, KZT, "0.0000"), new BigDecimal("7.5"));
+
+        assertThat(tx.getEntries())
+                .extracting(LedgerEntry::getDirection, e -> e.signedAmount().toPlainString())
+                .containsExactly(
+                        tuple(EntryDirection.DEBIT, "-7.5000"),
+                        tuple(EntryDirection.CREDIT, "7.5000"));
     }
 }

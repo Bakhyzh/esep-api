@@ -50,6 +50,7 @@ class AccountServiceTest {
     void create_newAccount_hasZeroBalanceAndActiveStatus() {
         User user = user(1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(accountRepository.findSystemAccountId(KZT)).thenReturn(Optional.of(100L));
         when(accountRepository.existsByUser_IdAndCurrencyAndStatus(1L, KZT, AccountStatus.ACTIVE)).thenReturn(false);
         when(accountRepository.saveAndFlush(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -80,8 +81,20 @@ class AccountServiceTest {
     }
 
     @Test
+    void create_validIsoCurrencyWithoutSystemAccount_throwsUnsupported() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(accountRepository.findSystemAccountId(Currency.getInstance("XTS"))).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> accountService.create(ME, new CreateAccountRequest("XTS")))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("XTS");
+        verify(accountRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
     void create_activeAccountInSameCurrencyExists_throwsConflict() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(accountRepository.findSystemAccountId(KZT)).thenReturn(Optional.of(100L));
         when(accountRepository.existsByUser_IdAndCurrencyAndStatus(1L, KZT, AccountStatus.ACTIVE)).thenReturn(true);
 
         assertThatThrownBy(() -> accountService.create(ME, new CreateAccountRequest("KZT")))
@@ -92,6 +105,7 @@ class AccountServiceTest {
     @Test
     void create_uniqueIndexViolatedByParallelRequest_throwsConflict() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L)));
+        when(accountRepository.findSystemAccountId(KZT)).thenReturn(Optional.of(100L));
         when(accountRepository.existsByUser_IdAndCurrencyAndStatus(1L, KZT, AccountStatus.ACTIVE)).thenReturn(false);
         when(accountRepository.saveAndFlush(any(Account.class)))
                 .thenThrow(new DataIntegrityViolationException("ux_accounts_user_currency_active"));

@@ -2,6 +2,7 @@ package com.esep.ratelimit;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.validator.constraints.time.DurationMin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -13,6 +14,7 @@ import java.time.Duration;
 public record RateLimitProperties(
         boolean enabled,
         @Min(1) int maxRequests,
-        @NotNull Duration window
+        // PEXPIRE with 0 deletes the counter at once: every request would be "the first" and nothing is limited
+        @NotNull @DurationMin(millis = 1) Duration window
 ) {
 }

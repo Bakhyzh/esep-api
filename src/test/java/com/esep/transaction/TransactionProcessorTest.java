@@ -201,6 +201,29 @@ class TransactionProcessorTest {
     }
 
     @Test
+    void deposit_toSystemAccount_isRejectedAndNothingMoves() {
+        Account funding = systemAccount(100, KZT);
+        when(accountRepository.findCurrencyById(100L)).thenReturn(Optional.of(KZT));
+        when(accountRepository.findSystemAccountId(KZT)).thenReturn(Optional.of(100L));
+        when(accountRepository.findByIdForUpdate(100L)).thenReturn(Optional.of(funding));
+
+        assertThatThrownBy(() -> processor.deposit(ADMIN, KEY, new DepositRequest(100L, new BigDecimal("10"))))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("system account");
+        assertThat(funding.getBalance()).isEqualByComparingTo("0");
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void deposit_unknownAccount_isNotFoundBeforeAnyLock() {
+        when(accountRepository.findCurrencyById(42L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> processor.deposit(ADMIN, KEY, new DepositRequest(42L, new BigDecimal("10"))))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(accountRepository, never()).findByIdForUpdate(anyLong());
+    }
+
+    @Test
     void getById_notParticipant_throwsNotFound() {
         when(transactionRepository.isParticipant(5L, ME.id())).thenReturn(false);
 

@@ -6,6 +6,7 @@ import com.esep.analytics.dto.MovingAveragePoint;
 import com.esep.analytics.dto.SpendingPoint;
 import com.esep.analytics.dto.TopTransaction;
 import com.esep.common.exception.InvalidRequestException;
+import com.esep.common.time.SupportedDates;
 import com.esep.common.time.TimeZones;
 import com.esep.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +54,8 @@ public class AnalyticsService {
         ZoneId validZone = TimeZones.requireRegion(zone);
         YearMonth lastMonth = until != null ? until : YearMonth.now(validZone);
         YearMonth firstMonth = lastMonth.minusMonths(months - 1L);
+        SupportedDates.require(lastMonth.atEndOfMonth(), "until");
+        SupportedDates.require(firstMonth.atDay(1), "until");
         ReportScope scope = new ReportScope(owner(currentUser, userId), currency,
                 firstMonth.atDay(1), lastMonth.atEndOfMonth(), validZone);
         return cache.getOrLoad(scope.userId(), "monthly", cacheParams(scope, months), MonthlyComparison.class,
@@ -68,8 +71,9 @@ public class AnalyticsService {
 
     private ReportScope scope(CurrentUser currentUser, ReportRequest request) {
         ZoneId zone = TimeZones.requireRegion(request.zone());
-        LocalDate to = request.to() != null ? request.to() : LocalDate.now(zone);
-        LocalDate from = request.from() != null ? request.from() : to.minusDays(DEFAULT_DAYS - 1);
+        LocalDate to = request.to() != null ? SupportedDates.require(request.to(), "to") : LocalDate.now(zone);
+        LocalDate from = request.from() != null ? SupportedDates.require(request.from(), "from")
+                : to.minusDays(DEFAULT_DAYS - 1);
         if (from.isAfter(to)) {
             throw new InvalidRequestException("'from' must not be after 'to'");
         }

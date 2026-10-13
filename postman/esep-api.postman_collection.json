@@ -1388,6 +1388,47 @@
               }
             }
           ]
+        },
+        {
+          "name": "UTC+05:00 zone -> 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/spending?currency={{currency}}&zone=UTC%2B05:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "analytics",
+                "spending"
+              ],
+              "query": [
+                {
+                  "key": "currency",
+                  "value": "{{currency}}"
+                },
+                {
+                  "key": "zone",
+                  "value": "UTC%2B05:00"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// a ZoneRegion in Java, but PostgreSQL would read it as UTC-5",
+                  "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Code is INVALID_REQUEST\", () => pm.expect(pm.response.json().code).to.eql(\"INVALID_REQUEST\"));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1905,6 +1946,50 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"Status is 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Currency without funding account -> 422",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/accounts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "accounts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currency\": \"XTS\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// a valid ISO code, but no system account: such an account could never be funded",
+                  "pm.test(\"Status is 422\", () => pm.response.to.have.status(422));",
+                  "pm.test(\"Code is UNSUPPORTED_CURRENCY\", () => pm.expect(pm.response.json().code).to.eql(\"UNSUPPORTED_CURRENCY\"));"
                 ]
               }
             }
