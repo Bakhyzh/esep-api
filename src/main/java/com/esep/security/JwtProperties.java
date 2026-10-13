@@ -3,6 +3,7 @@ package com.esep.security;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.time.DurationMin;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -19,7 +20,8 @@ public record JwtProperties(
         @NotBlank
         String issuer,
 
-        @NotNull
+        // ttl=0 or negative: every token is born expired and nobody can use the API
+        @NotNull @DurationMin(seconds = 1)
         Duration ttl
 ) {
 }
