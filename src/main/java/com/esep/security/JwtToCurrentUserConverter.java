@@ -17,7 +17,7 @@ public class JwtToCurrentUserConverter implements Converter<Jwt, AbstractAuthent
     public AbstractAuthenticationToken convert(Jwt jwt) {
         CurrentUser user = new CurrentUser(
                 userId(jwt),
-                Role.valueOf(jwt.getClaimAsString(ROLE_CLAIM)));
+                role(jwt));
         return new CurrentUserAuthentication(user, jwt);
     }
 
@@ -27,6 +27,16 @@ public class JwtToCurrentUserConverter implements Converter<Jwt, AbstractAuthent
             return Long.valueOf(jwt.getSubject());
         } catch (NumberFormatException e) {
             throw new InvalidBearerTokenException("Token subject is not a user id");
+        }
+    }
+
+    // missing claim -> Role.valueOf(null) is an NPE; unknown name (a role removed later) -> IllegalArgumentException
+    private static Role role(Jwt jwt) {
+        String role = jwt.getClaimAsString(ROLE_CLAIM);
+        try {
+            return Role.valueOf(role);
+        } catch (NullPointerException | IllegalArgumentException e) {
+            throw new InvalidBearerTokenException("Token has no valid role");
         }
     }
 }

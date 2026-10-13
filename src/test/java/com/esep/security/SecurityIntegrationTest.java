@@ -76,6 +76,13 @@ class SecurityIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void signedTokenWithoutRole_returns401() throws Exception {
+        mvc.perform(get("/api/accounts").header(HttpHeaders.AUTHORIZATION, "Bearer " + signed("1", null)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
+    }
+
+    @Test
     void registerLoginAndMe_happyPath() throws Exception {
         String email = uniqueEmail();
         mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)

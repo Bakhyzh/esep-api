@@ -28,6 +28,18 @@ class JwtToCurrentUserConverterTest {
                 .isInstanceOf(InvalidBearerTokenException.class);
     }
 
+    @Test
+    void missingRole_isAnInvalidToken() {
+        assertThatThrownBy(() -> converter.convert(jwt("42", null)))
+                .isInstanceOf(InvalidBearerTokenException.class);
+    }
+
+    @Test
+    void unknownRole_isAnInvalidToken() {
+        assertThatThrownBy(() -> converter.convert(jwt("42", "SUPERUSER")))
+                .isInstanceOf(InvalidBearerTokenException.class);
+    }
+
     static Jwt jwt(String subject, String role) {
         Jwt.Builder builder = Jwt.withTokenValue("token").header("alg", "HS256").subject(subject);
         if (role != null) {
