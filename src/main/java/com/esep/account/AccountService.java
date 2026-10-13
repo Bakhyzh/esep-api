@@ -32,6 +32,11 @@ public class AccountService {
         User user = userRepository.findById(currentUser.id())
                 .orElseThrow(() -> new ResourceNotFoundException("User", currentUser.id()));
         Currency currency = parseCurrency(request.currency());
+        // money enters only through a deposit from the currency's system account: without one,
+        // an account in e.g. XTS (a valid ISO code) could never hold anything
+        if (accountRepository.findSystemAccountId(currency).isEmpty()) {
+            throw new BusinessRuleException(ErrorCode.UNSUPPORTED_CURRENCY, "Accounts in " + currency + " are not supported");
+        }
 
         // fast path: a friendly error in the common case
         if (accountRepository.existsByUser_IdAndCurrencyAndStatus(user.getId(), currency, AccountStatus.ACTIVE)) {
