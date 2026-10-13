@@ -3,6 +3,7 @@ package com.esep.demo;
 import com.esep.account.Account;
 import com.esep.account.AccountRepository;
 import com.esep.account.AccountService;
+import com.esep.account.dto.AccountResponse;
 import com.esep.security.CurrentUser;
 import com.esep.transaction.TransactionService;
 import com.esep.transaction.dto.DepositRequest;
@@ -23,6 +24,7 @@ import java.util.Currency;
 import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -81,6 +83,34 @@ class DemoDataSeederFundingTest {
         seeder.run(new DefaultApplicationArguments());
 
         verify(transactionService, never()).deposit(any(), anyString(), any());
+    }
+
+    @Test
+    void zeroInitialBalance_opensTheAccountButDepositsNothing() {
+        DemoProperties noMoney = new DemoProperties(true, EMAIL, "demo-password", "KZT", BigDecimal.ZERO);
+        DemoDataSeeder emptySeeder = new DemoDataSeeder(noMoney, userRepository, accountRepository, accountService,
+                transactionService, passwordEncoder);
+        when(accountRepository.findAllByUser_IdOrderByIdAsc(3L)).thenReturn(List.of());
+        when(accountService.create(any(), any())).thenReturn(
+                new AccountResponse(7L, 3L, "KZT", BigDecimal.ZERO, null, null, null, null));
+
+        emptySeeder.run(new DefaultApplicationArguments());
+
+        verify(accountService).create(any(), any());
+        verify(transactionService, never()).deposit(any(), anyString(), any());
+    }
+
+    @Test
+    void passwordChangedInTheEnvironment_updatesTheStoredHash() {
+        when(passwordEncoder.matches("demo-password", "{bcrypt}hash")).thenReturn(false);
+        when(passwordEncoder.encode("demo-password")).thenReturn("{bcrypt}new-hash");
+        when(userRepository.save(user)).thenReturn(user);
+        when(accountRepository.findAllByUser_IdOrderByIdAsc(3L)).thenReturn(List.of(account(7L)));
+
+        seeder.run(new DefaultApplicationArguments());
+
+        verify(userRepository).save(user);
+        assertThat(user.getPasswordHash()).isEqualTo("{bcrypt}new-hash");
     }
 
     private Account account(long id) {
