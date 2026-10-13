@@ -1,5 +1,6 @@
 package com.esep.demo;
 
+import com.esep.common.validation.MaxUtf8Bytes;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +17,8 @@ import java.math.BigDecimal;
 public record DemoProperties(
         boolean enabled,
         @NotBlank @Email String email,
-        @NotBlank @Size(min = 8, message = "must be at least 8 characters") String password,
+        // the hash is BCrypt: over 72 bytes the encoder throws and the app dies with an obscure error
+        @NotBlank @Size(min = 8, message = "must be at least 8 characters") @MaxUtf8Bytes(72) String password,
         @NotBlank String currency,
         @NotNull @PositiveOrZero BigDecimal initialBalance
 ) {
