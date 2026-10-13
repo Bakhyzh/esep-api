@@ -23,6 +23,10 @@ public class TransferNotificationListener {
     }
 
     private TransferCompletedEvent parse(String payload) {
+        // a tombstone (null value): readValue(null) throws IllegalArgumentException, which would be retried
+        if (payload == null) {
+            throw new InvalidEventException("TransferCompletedEvent has no payload", null);
+        }
         TransferCompletedEvent event;
         try {
             event = jsonMapper.readValue(payload, TransferCompletedEvent.class);
