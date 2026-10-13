@@ -45,6 +45,37 @@ class AccountTest {
                 .extracting("code").isEqualTo(ErrorCode.BALANCE_LIMIT_EXCEEDED);
     }
 
+    @Test
+    void systemAccount_cannotBeClosed() {
+        Account system = account(AccountType.SYSTEM, "-500.0000");
+
+        assertThatThrownBy(system::close)
+                .isInstanceOf(BusinessRuleException.class)
+                .extracting("code").isEqualTo(ErrorCode.SYSTEM_ACCOUNT_OPERATION);
+        assertThat(system.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+    }
+
+    @Test
+    void closing_recordsTheMomentAndBlocksFurtherPostings() {
+        Account account = account(AccountType.USER, "0.0000");
+
+        account.close();
+
+        assertThat(account.getStatus()).isEqualTo(AccountStatus.CLOSED);
+        assertThat(account.getClosedAt()).isNotNull();
+        assertThatThrownBy(() -> account.credit(BigDecimal.ONE))
+                .extracting("code").isEqualTo(ErrorCode.ACCOUNT_CLOSED);
+    }
+
+    @Test
+    void newAccount_startsEmptyWithMoneyScale() {
+        Account account = new Account(new User("u@esep.dev", "hash", Role.USER), KZT);
+
+        assertThat(account.getBalance()).hasToString("0.0000");
+        assertThat(account.getType()).isEqualTo(AccountType.USER);
+        assertThat(account.getStatus()).isEqualTo(AccountStatus.ACTIVE);
+    }
+
     static Account account(AccountType type, String balance) {
         User user = new User("u@esep.dev", "hash", Role.USER);
         Account account = new Account(user, KZT);
