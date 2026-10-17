@@ -15,25 +15,25 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      test: [ "CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\"" ]
       interval: 5s
       timeout: 3s
       retries: 10
     mem_limit: 320m
-    networks: [internal]
+    networks: [ internal ]
 
   redis:
     image: redis:7.4-alpine
     restart: unless-stopped
     # pure cache + rate-limit counters: no persistence to disk, evict old keys instead of failing when full
-    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "48mb", "--maxmemory-policy", "allkeys-lru"]
+    command: [ "redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "48mb", "--maxmemory-policy", "allkeys-lru" ]
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 10
     mem_limit: 64m
-    networks: [internal]
+    networks: [ internal ]
 
   # single-node Kafka in KRaft mode, only the internal listener (no EXTERNAL one as in dev)
   kafka:
@@ -58,13 +58,13 @@ services:
     volumes:
       - kafkadata:/var/lib/kafka/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1" ]
       interval: 10s
       timeout: 10s
       retries: 12
       start_period: 20s
     mem_limit: 512m
-    networks: [internal]
+    networks: [ internal ]
 
   app:
     image: ghcr.io/bakhyzh/esep-api:${IMAGE_TAG:-latest}
@@ -97,12 +97,12 @@ services:
     mem_limit: 640m
     # same check as the image's HEALTHCHECK, with more start time: a 2 GB VPS starts Spring slower
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q '\"status\":\"UP\"'"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep -q '\"status\":\"UP\"'" ]
       interval: 10s
       timeout: 3s
       retries: 6
       start_period: 90s
-    networks: [internal]
+    networks: [ internal ]
 
   caddy:
     image: caddy:2.11-alpine
@@ -115,13 +115,13 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp"   # HTTP/3
+      - "443:443/udp" # HTTP/3
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data       # certificates and ACME account: losing it means re-issuing (rate limits!)
+      - caddy_data:/data # certificates and ACME account: losing it means re-issuing (rate limits!)
       - caddy_config:/config
     mem_limit: 128m
-    networks: [internal]
+    networks: [ internal ]
 
 networks:
   internal:
