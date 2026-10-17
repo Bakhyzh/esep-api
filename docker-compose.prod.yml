@@ -115,10 +115,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "443:443/udp"   # HTTP/3
+      - "443:443/udp" # HTTP/3
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data       # certificates and ACME account: losing it means re-issuing (rate limits!)
+      - caddy_data:/data # certificates and ACME account: losing it means re-issuing (rate limits!)
       - caddy_config:/config
     mem_limit: 128m
     networks: [ internal ]
