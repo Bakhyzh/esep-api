@@ -48,3 +48,4 @@ public class AuthController {
         return authService.me(currentUser.id());
     }
 }
+ 
