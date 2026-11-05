@@ -73,6 +73,7 @@
         "post.logout.redirect.uris": "http://localhost:5173/"
       },
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "profile",
         "email"

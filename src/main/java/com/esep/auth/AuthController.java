@@ -45,7 +45,7 @@ public class AuthController {
     @Operation(summary = "Current user from the token")
     @GetMapping("/me")
     public UserResponse me(@AuthenticationPrincipal CurrentUser currentUser) {
-        return authService.me(currentUser.id());
+        return authService.me(currentUser);
     }
 }
  

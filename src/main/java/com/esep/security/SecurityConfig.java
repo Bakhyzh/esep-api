@@ -4,6 +4,10 @@ import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,7 +41,10 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             JwtToCurrentUserConverter jwtConverter,
-                                            SecurityProblemHandler problemHandler) throws Exception {
+                                            SecurityProblemHandler problemHandler,
+                                            Environment environment,
+                                            ObjectProvider<KeycloakJwtConverter> keycloakConverter) throws Exception {
+        boolean keycloak = environment.acceptsProfiles(Profiles.of("keycloak-integration"));
         http
                 // CORS inside Spring Security: the browser's preflight OPTIONS request carries no token,
                 // so it must be answered by the CORS filter before authentication would reject it with 401
@@ -47,15 +54,24 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 // no HttpSession: every request is authenticated by its own token
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                .authorizeHttpRequests(auth -> {
+                    if (keycloak) {
+                        auth.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").denyAll();
+                    } else {
+                        auth.requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll();
+                    }
+                    auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/health", "/error").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/deposits").hasRole("ADMIN")
-                        // deny by default: a new endpoint is closed until someone opens it on purpose
-                        .anyRequest().authenticated())
+                        .requestMatchers(HttpMethod.POST, "/api/deposits").hasRole("ADMIN");
+                    if (keycloak) {
+                        auth.anyRequest().hasAnyRole("USER", "ADMIN");
+                    } else {
+                        auth.anyRequest().authenticated();
+                    }
+                })
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(keycloak ? keycloakConverter.getObject() : jwtConverter))
                         .authenticationEntryPoint(problemHandler)
                         .accessDeniedHandler(problemHandler))
                 .exceptionHandling(errors -> errors
@@ -91,6 +107,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    @Profile("!keycloak-integration")
     JwtDecoder jwtDecoder(JwtProperties properties) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(signingKey(properties))
                 .macAlgorithm(MacAlgorithm.HS256)

@@ -1,0 +1,9 @@
+# Explicit LOCAL/TEST opt-in. KeycloakSecurityConfig rejects prod or missing dev/test.
+esep:
+  security:
+    keycloak:
+      issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8180/realms/esep}
+      jwk-set-uri: ${OIDC_JWK_SET_URI:http://localhost:8180/realms/esep/protocol/openid-connect/certs}
+  # No account creation, password mutation, or funding on an OIDC application start.
+  demo:
+    enabled: false

@@ -183,6 +183,7 @@ def verify_jwt(token, jwks, expected_roles):
     if isinstance(aud, str):
         aud = [aud]
     check(payload.get("iss") == ISSUER and "esep-api" in aud, "Invalid issuer/audience")
+    check(isinstance(payload.get("sub"), str) and bool(payload["sub"].strip()), "Missing access-token subject")
     check(payload.get("exp", 0) > time.time(), "Access token expired")
     check(0 < payload["exp"] - payload["iat"] <= 300, "Access token TTL exceeds 300s")
     roles = set(payload.get("resource_access", {}).get("esep-api", {}).get("roles", []))
@@ -198,6 +199,8 @@ def verify_configuration(token):
     check(not web["implicitFlowEnabled"] and not web["directAccessGrantsEnabled"]
           and not web["serviceAccountsEnabled"], "Forbidden frontend grant enabled")
     check(web["attributes"].get("pkce.code.challenge.method") == "S256", "PKCE S256 not enforced")
+    default_scopes = get_json(BASE + "/admin/realms/esep/clients/" + web["id"] + "/default-client-scopes", token)
+    check(any(scope["name"] == "basic" for scope in default_scopes), "Missing basic scope supplying access-token sub")
     check(web["redirectUris"] == [CALLBACK] and web["webOrigins"] == ["http://localhost:5173"],
           "Unexpected redirect URI/origin")
     check(api["bearerOnly"] and not api["standardFlowEnabled"]

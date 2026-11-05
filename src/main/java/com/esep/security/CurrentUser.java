@@ -2,7 +2,7 @@ package com.esep.security;
 
 import com.esep.user.Role;
 
-/** Who is calling, taken from a verified JWT. No database lookup per request. */
+/** Local business identity. OIDC resolves validated issuer/sub through an explicit DB mapping. */
 public record CurrentUser(Long id, Role role) {
 
     public boolean isAdmin() {

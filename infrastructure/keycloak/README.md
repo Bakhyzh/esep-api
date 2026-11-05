@@ -6,6 +6,9 @@
 [phase report](../../docs/architecture/PHASE_2_1_KEYCLOAK_REPORT.md).
 Первоначальный архитектурный аудит хранится отдельно и не входит в этот commit.
 
+Phase 2.2 добавляет отдельный opt-in профиль backend, не меняя default auth:
+[identity mapping и безопасный trial](../../docs/runbooks/keycloak-identity-migration.md).
+
 ## Состав
 
 | Ресурс | Значение |
@@ -89,6 +92,7 @@ Realm `esep` импортируется из `realm/esep-realm.json`, mount read
 | Client roles | `esep-api`: `USER`, `ADMIN` |
 | Audience | Hardcoded audience mapper `esep-api`, только access token |
 | Role claim | `resource_access.esep-api.roles`, multivalued; role scope явно ограничен |
+| Subject | Default client scope `basic` добавляет обязательный access-token `sub` |
 | Signing / access TTL | RS256 / 300 секунд |
 | SSO | idle 30 минут, max 8 часов; refresh rotation без reuse |
 | Auth code | 60 секунд после выдачи |
@@ -107,6 +111,20 @@ legacy user activation. Роли назначаются явно; никто н�
 Startup import пропускает уже существующий realm: правка JSON + restart не обновляет
 живую конфигурацию. Не удаляйте realm/volume для обновления; следующий шаг —
 отдельная согласованная Admin API migration. Realm JSON не полноценный backup БД.
+
+Для realm, созданного Phase 2.1 без scope `basic`, сначала выполните dry-run,
+затем явное применение. Добавляется только scope текущему `esep-web`, без reset
+и без изменения user IDs. Script использует admin Authorization Code + PKCE:
+
+```bash
+python3 infrastructure/keycloak/migrate-subject-scope.py
+python3 infrastructure/keycloak/migrate-subject-scope.py --apply
+```
+
+В другом worktree добавьте `--identity-dir /absolute/path/to/original/infrastructure/keycloak`
+для доступа к существующему ignored `.env`. Новая установка уже импортирует basic.
+Повтор миграции не меняет конфигурацию. Access tokens, выданные до исправления,
+не получают sub задним числом: после применения выполните новый OIDC login.
 
 ## Issuer и JWKS: хост, Docker, production
 

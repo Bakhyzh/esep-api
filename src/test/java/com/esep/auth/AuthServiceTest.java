@@ -110,6 +110,15 @@ class AuthServiceTest {
     }
 
     @Test
+    void keycloakOnlyUser_cannotAuthenticateWithTimingDummyPassword() {
+        User user = new User("oidc@example.com", null, Role.USER);
+        when(userRepository.findByEmail("oidc@example.com")).thenReturn(Optional.of(user));
+        assertThatThrownBy(() -> authService.login(new LoginRequest("oidc@example.com", "dummy-password-for-timing")))
+                .isInstanceOf(BadCredentialsException.class);
+        verify(tokenService, never()).issue(any());
+    }
+
+    @Test
     void me_deletedUser_isNotFound() {
         when(userRepository.findById(5L)).thenReturn(Optional.empty());
 

@@ -8,6 +8,7 @@ import com.esep.common.exception.ConflictException;
 import com.esep.common.exception.ErrorCode;
 import com.esep.common.exception.ResourceNotFoundException;
 import com.esep.security.TokenService;
+import com.esep.security.CurrentUser;
 import com.esep.user.Role;
 import com.esep.user.User;
 import com.esep.user.UserRepository;
@@ -57,7 +58,8 @@ public class AuthService {
         Optional<User> user = userRepository.findByEmail(normalize(request.email()));
         boolean passwordMatches = passwordEncoder.matches(
                 request.password(), user.map(User::getPasswordHash).orElse(dummyHash));
-        if (user.isEmpty() || !passwordMatches) {
+        // A Keycloak-only profile must never authenticate against the timing dummy hash.
+        if (user.isEmpty() || user.get().getPasswordHash() == null || !passwordMatches) {
             // one message for both cases: do not tell an attacker which emails exist
             throw new BadCredentialsException("Invalid email or password");
         }
@@ -69,6 +71,12 @@ public class AuthService {
         return userRepository.findById(userId)
                 .map(UserResponse::from)
                 .orElseThrow(() -> new ResourceNotFoundException("User", userId));
+    }
+
+    /** Identity stays local; the effective authorization role comes from the verified token. */
+    public UserResponse me(CurrentUser currentUser) {
+        UserResponse user = me(currentUser.id());
+        return new UserResponse(user.id(), user.email(), currentUser.role(), user.createdAt());
     }
 
     private static String normalize(String email) {
