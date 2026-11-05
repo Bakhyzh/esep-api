@@ -190,9 +190,12 @@ not rewrite an existing realm. No financial data was changed by this task.
 
 ## Git publication
 
-Implementation commit SHA: pending creation after final diff/secrets review.
-Push status: not yet attempted at report preparation; no publication is claimed here.
-This section will record the verified implementation SHA after successful push.
+Implementation commit SHA: `324ac1930d21a824c18561d24286a135801eda4d`.
+Push status: successful normal push to `origin/main`; `git ls-remote origin
+refs/heads/main` independently returned this exact SHA. Main was integrated with
+fast-forward only. An initial sandbox DNS failure was resolved by the permitted
+network retry; no force push or branch protection bypass was used.
+This publication record is saved in a subsequent documentation-only commit.
 Only Phase 2.2 code/tests/runbook/infrastructure corrections and this report are
 eligible; the seven original untracked audit documents and db-lab are excluded.
 
