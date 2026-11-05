@@ -1,0 +1,73 @@
+# LOCAL ONLY. This project never connects to the ESEP database or its network.
+name: esep-identity-dev
+
+services:
+  keycloak-db:
+    image: postgres:17.11-alpine@sha256:562a6e0a66b5136bc28bef5944bbc2ddddf8ea0058d4016b96cee63f2edaf143
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kc_bootstrap
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${KC_DB_BOOTSTRAP_PASSWORD:?Set KC_DB_BOOTSTRAP_PASSWORD}
+      KEYCLOAK_DB_USER: keycloak
+      KEYCLOAK_DB_PASSWORD: ${KC_DB_PASSWORD:?Set KC_DB_PASSWORD}
+    volumes:
+      - keycloak_pgdata:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/10-keycloak.sql:ro
+    networks: [identity]
+    healthcheck:
+      test: [CMD-SHELL, "PGPASSWORD=\"$$KEYCLOAK_DB_PASSWORD\" psql -h 127.0.0.1 -U keycloak -d keycloak_db -Atqc 'SELECT 1' | grep -qx 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    mem_limit: 384m
+    cpus: 1.0
+    stop_grace_period: 30s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0@sha256:0f198be292568439d700cdbfb893e69a6009bb43a94a06a945b1d3d506c76b13
+    command: [start-dev, --import-realm]
+    restart: unless-stopped
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak_db
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD:?Set KC_DB_PASSWORD}
+      KC_DB_POOL_INITIAL_SIZE: 1
+      KC_DB_POOL_MIN_SIZE: 1
+      KC_DB_POOL_MAX_SIZE: 5
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_ADMIN_USERNAME:?Set KC_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?Set KC_ADMIN_PASSWORD}
+      KC_HOSTNAME: http://localhost:8180
+      KC_HEALTH_ENABLED: "true"
+      JAVA_OPTS_KC_HEAP: "-XX:InitialRAMPercentage=30 -XX:MaxRAMPercentage=65"
+    ports:
+      - "127.0.0.1:8180:8080"
+    volumes:
+      - ./realm/esep-realm.json:/opt/keycloak/data/import/esep-realm.json:ro
+    networks: [identity]
+    healthcheck:
+      # The Keycloak image has bash but no curl/wget. Management port stays private.
+      test:
+        - CMD
+        - bash
+        - -ec
+        - "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep -q 'HTTP/1.0 200'; } 0<>/dev/tcp/127.0.0.1/9000"
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 90s
+    mem_limit: 768m
+    cpus: 1.5
+    stop_grace_period: 30s
+
+networks:
+  identity:
+    driver: bridge
+
+volumes:
+  keycloak_pgdata:
