@@ -8,8 +8,8 @@ an assertion that the entire platform is complete or production-ready.
 | A User | Published main 0a8781de91f05f935d89d66cb65e1da2aa132c4b; CI 42218237669 success; User 4 tests, Ledger 87, monolith 248 with 1 opt-in skip; actual Keycloak/identity/financial/replay flow passed |
 | B Notification | Published main 82997fde4280b8de3b649d6276808eb13e3dd532; CI 42221287503 success; 5 real integration tests and actual Kafka outage/recovery E2E passed |
 | C Analytics | Implemented locally; Ledger 89 and Analytics 10 tests passed; exact read model, Redis durable generations, full posting/account facts, fenced historical API export; real Keycloak/Kafka outage/historical backfill/reconciliation/invariants passed; published main 6c1325fb6a38f4fda04a1fd6785a0d7a02e048a7; CI 42224430846 all jobs success |
-| D Gateway | Implemented locally; Gateway6 real integration tests; frontend31 tests/build; actual PKCE browser account/transfer/Notification/Analytics/logout passed; publication/CI pending |
-| E Edge/scaling | Not implemented yet; two Gateways, Nginx, health/failure tests; multiple Ledger instances must share only their dedicated authority DB |
+| D Gateway | Implemented locally; Gateway6 real integration tests; frontend31 tests/build; actual PKCE browser account/transfer/Notification/Analytics/logout passed; published backend25a28ab / frontend4344375; CI42227334980 /42227415319 success |
+| E Edge/scaling | Implemented locally; two Gateways/two Ledger, pinned non-root Nginx/static frontend; Gateway7/Ledger89 tests; real edge browser and both replica kill/recovery plus invariants passed; publication/CI pending |
 | F DBA/DR | Not implemented yet; diagnostics, separate ops roles, encrypted backup/retention/isolated restore, PITR lab and runbooks |
 | G Observability | Not implemented yet; Prometheus/Grafana/Loki/OTel/trace backend with actual data and safe logs |
 | H Performance/resilience | Not implemented yet; synthetic k6 workloads, real measurements and isolated faults; post-load invariants |

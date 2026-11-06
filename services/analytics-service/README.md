@@ -45,7 +45,7 @@ From repository root:
 ```sh
 ./mvnw -B -f services/analytics-service/pom.xml verify
 # First installation only; fails safely if credentials already exist:
-python3 infrastructure/platform/init-env.py
+python3 infrastructure/platform/init-env.py --frontend-dir ../esep-web-platform
 # Build separately before start, to avoid competing image exporters:
 docker compose -f compose.platform.yaml --env-file .env.platform build analytics ledger
 docker compose -f compose.platform.yaml --env-file .env.platform up -d --no-build --wait

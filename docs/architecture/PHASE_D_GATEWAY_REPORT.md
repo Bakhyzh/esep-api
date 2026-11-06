@@ -90,6 +90,9 @@ manual refresh and a truthful eventual-update message. No default ADMIN is creat
 - Browser's initial two-decimal display expectation was corrected: the existing UI
   correctly preserves four decimals. No money-formatting implementation was changed.
 
-Security scans and remote CI/publication SHAs are pending at report creation.
+Security scans passed. Published backend main `25a28ab78f24d481ec993b0161a7214a2858c619`,
+CI `42227334980` all six jobs success; frontend main
+`4344375970d63dfeaa108352ce581eec5857831a`, CI `42227415319` success.
+Both remote main SHAs verified; public deployments remain disabled.
 Later Nginx replicas, DBA/recovery,
 observability, load tests and production hardening are not claimed complete here.

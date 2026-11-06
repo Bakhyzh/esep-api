@@ -46,14 +46,19 @@ def main():
     parser.add_argument('--analytics-url')
     parser.add_argument('--gateway-url')
     parser.add_argument('--frontend-dir',type=Path)
+    parser.add_argument('--replica-failures',action='store_true')
     parser.add_argument('--broker-recovery',action='store_true')
     args=parser.parse_args()
     global GATEWAY
     if args.gateway_url:
         parsed=urllib.parse.urlsplit(args.gateway_url)
-        if parsed.scheme!='http' or parsed.hostname not in ('localhost','127.0.0.1') or parsed.port not in (18080,8080):
+        if parsed.scheme!='http' or parsed.hostname not in ('localhost','127.0.0.1') or parsed.port not in (18080,18081):
             raise RuntimeError('Gateway E2E accepts only isolated loopback ports')
         GATEWAY=args.gateway_url
+        health='/ready' if parsed.port==18081 else '/actuator/health/readiness'
+        with urllib.request.urlopen(GATEWAY+health,timeout=5) as response:
+            if response.status!=200 or response.headers.get('X-Gateway-Instance') not in ('gateway-1','gateway-2'):
+                raise RuntimeError('Expected the isolated platform Gateway before sending any credentials')
     if args.frontend_dir and not GATEWAY:raise RuntimeError('Browser E2E requires Gateway')
     for base in [args.user_url,args.ledger_url,args.notification_url,args.analytics_url]:
         if base is not None:
@@ -161,6 +166,9 @@ def main():
             return desired==actual
         wait(reconciled,'Identity reconciliation mismatch')
         passed('Lifecycle disable/enable, idempotent snapshot replay and cross-service identity reconciliation passed')
+        if args.replica_failures:
+            faults=runpy.run_path(str(ROOT/'tests/e2e/replica-failures.py'))
+            faults['run'](ROOT,GATEWAY,alice,bob,a,b,api,wait,check,passed)
         if args.frontend_dir:
             import os
             frontend=args.frontend_dir.resolve()
@@ -175,7 +183,8 @@ def main():
             child_env=os.environ.copy()
             child_env.update(ESEP_PLATFORM_USERNAME=name,ESEP_PLATFORM_PASSWORD=password,
                 ESEP_PLATFORM_NEW_PASSWORD=secrets.token_urlsafe(32),ESEP_PLATFORM_OPERATOR_TOKEN=operator[0],
-                ESEP_RECIPIENT_ACCOUNT_ID=str(b['id']),ESEP_GATEWAY_URL=GATEWAY)
+                ESEP_RECIPIENT_ACCOUNT_ID=str(b['id']),ESEP_GATEWAY_URL=GATEWAY,
+                E2E_BASE_URL='http://localhost:18081' if urllib.parse.urlsplit(GATEWAY).port==18081 else 'http://localhost:5173')
             subprocess.run(['npm','run','e2e','--','e2e/platform.spec.ts'],cwd=frontend,env=child_env,check=True)
             passed('Actual browser PKCE first login -> automatic profile/projections -> account -> transfer -> notification/analytics display -> logout')
     finally:

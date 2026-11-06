@@ -1,0 +1,18 @@
+esep.gateway.ledger-uri: lb://ledger
+spring.cloud:
+  discovery.client.simple.instances.ledger:
+    - instance-id: ledger-1
+      uri: ${LEDGER_INSTANCE_1_URL:http://ledger:8082}
+    - instance-id: ledger-2
+      uri: ${LEDGER_INSTANCE_2_URL:http://ledger-2:8082}
+  loadbalancer:
+    eager-load.clients: ledger
+    retry.enabled: false
+    cache.enabled: false
+    health-check:
+      path.default: /actuator/health/readiness
+      initial-delay: 0s
+      interval: 2s
+      refetch-instances: true
+      refetch-instances-interval: 5s
+      update-results-list: false

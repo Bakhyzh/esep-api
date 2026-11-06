@@ -25,6 +25,7 @@ spring:
         request.timeout.ms: 1000
         delivery.timeout.ms: 3000
 server:
+  shutdown: graceful
   port: ${SERVER_PORT:8083}
 management:
   endpoints.web.exposure.include: health,info

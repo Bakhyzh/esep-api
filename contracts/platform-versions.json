@@ -1,0 +1,8 @@
+{
+  "frontendRepository": "https://github.com/Bakhyzh/esep-web",
+  "frontendCommit": "a70afab85289b299fe49f481fc909b999d25faf6",
+  "java": 21,
+  "springBoot": "4.1.1",
+  "springCloud": "2025.1.4",
+  "nginxImage": "nginx:1.30.6-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311"
+}

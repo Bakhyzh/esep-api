@@ -16,7 +16,7 @@ public class CorrelationFilter implements WebFilter {
         var clean=exchange.mutate().request(r->r.headers(h->{
             for(String name:List.copyOf(h.headerNames())) {
                 String lower=name.toLowerCase(Locale.ROOT);
-                if(lower.startsWith("x-user-") || lower.startsWith("x-forwarded-") || lower.equals("forwarded")) h.remove(name);
+                if(lower.startsWith("x-user-") || lower.startsWith("x-sc-lb-") || lower.startsWith("x-forwarded-") || lower.equals("forwarded")) h.remove(name);
             }
             h.set("X-Correlation-ID",id);
         })).build();

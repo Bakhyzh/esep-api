@@ -29,10 +29,13 @@ import static org.assertj.core.api.Assertions.*;
 /** Real HTTP routing/JWKS/cryptography and Redis; business behavior is tested against real services by E2E. */
 @SpringBootTest(webEnvironment=SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(GatewayIntegrationTest.Infrastructure.class)
+@ActiveProfiles("replicated")
 class GatewayIntegrationTest {
     static final RSAKey KEY;
     static final AtomicReference<JWKSet> KEYS=new AtomicReference<>();
     static final HttpServer BACKEND;
+    static final HttpServer SECOND;
+    static final AtomicBoolean FIRST_HEALTHY=new AtomicBoolean(true), SECOND_HEALTHY=new AtomicBoolean(true);
     static final ExecutorService SERVER_THREADS=Executors.newCachedThreadPool();
     static final AtomicInteger WRITES=new AtomicInteger();
     static final AtomicBoolean FORGED_HEADER=new AtomicBoolean();
@@ -47,12 +50,22 @@ class GatewayIntegrationTest {
                 e.getResponseHeaders().set("Content-Type","application/json");e.sendResponseHeaders(200,value.length);
                 try(var stream=e.getResponseBody()){stream.write(value);}
             });
-            BACKEND.createContext("/api",e->{
+            BACKEND.createContext("/api",e->serve(e,"ledger-1"));
+            BACKEND.createContext("/actuator/health/readiness",e->health(e,FIRST_HEALTHY));
+            SECOND=HttpServer.create(new InetSocketAddress("127.0.0.1",0),0);SECOND.setExecutor(SERVER_THREADS);
+            SECOND.createContext("/api",e->serve(e,"ledger-2"));
+            SECOND.createContext("/actuator/health/readiness",e->health(e,SECOND_HEALTHY));
+            SECOND.start();
+            BACKEND.start();BASE="http://127.0.0.1:"+BACKEND.getAddress().getPort();
+        } catch(Exception e){throw new ExceptionInInitializerError(e);}
+    }
+    static void serve(com.sun.net.httpserver.HttpExchange e,String instance)throws java.io.IOException {
                 e.getRequestBody().readAllBytes();
                 if(e.getRequestURI().getPath().endsWith("/slow"))try{Thread.sleep(1500);}catch(InterruptedException ex){Thread.currentThread().interrupt();}
                 if(e.getRequestMethod().equals("POST"))WRITES.incrementAndGet();
                 FORGED_HEADER.set(e.getRequestHeaders().getFirst("X-User-Id")!=null);
                 BEARER_PRESENT.set(Optional.ofNullable(e.getRequestHeaders().getFirst("Authorization")).orElse("").startsWith("Bearer "));
+                e.getResponseHeaders().set("X-Ledger-Instance",instance);
                 e.getResponseHeaders().set("Content-Type","application/json");
                 if(e.getRequestHeaders().getFirst("Origin")!=null) e.getResponseHeaders().set("Access-Control-Allow-Origin",e.getRequestHeaders().getFirst("Origin"));
                 e.getResponseHeaders().set("Idempotent-Replayed","true");
@@ -60,9 +73,11 @@ class GatewayIntegrationTest {
                 byte[] body="{\"backend\":true}".getBytes(StandardCharsets.UTF_8);
                 e.sendResponseHeaders(e.getRequestMethod().equals("POST")?201:200,body.length);
                 try(var stream=e.getResponseBody()){stream.write(body);}
-            });
-            BACKEND.start();BASE="http://127.0.0.1:"+BACKEND.getAddress().getPort();
-        } catch(Exception e){throw new ExceptionInInitializerError(e);}
+    }
+    static void health(com.sun.net.httpserver.HttpExchange e,AtomicBoolean healthy)throws java.io.IOException {
+        byte[] body=(healthy.get()?"{\"status\":\"UP\"}":"{\"status\":\"DOWN\"}").getBytes(StandardCharsets.UTF_8);
+        e.getResponseHeaders().set("Content-Type","application/json");e.sendResponseHeaders(healthy.get()?200:503,body.length);
+        try(var stream=e.getResponseBody()){stream.write(body);}
     }
     @TestConfiguration(proxyBeanMethods=false) static class Infrastructure {
         @Bean @ServiceConnection(name="redis") GenericContainer<?> redis(){
@@ -70,14 +85,19 @@ class GatewayIntegrationTest {
         }
     }
     @DynamicPropertySource static void properties(DynamicPropertyRegistry r){
-        for(String service:List.of("user","ledger","analytics","notification"))r.add("esep.gateway."+service+"-uri",()->BASE);
+        for(String service:List.of("user","analytics","notification"))r.add("esep.gateway."+service+"-uri",()->BASE);
+        r.add("esep.gateway.ledger-uri",()->"lb://ledger");
+        r.add("spring.cloud.discovery.client.simple.instances.ledger[0].uri",()->BASE);
+        r.add("spring.cloud.discovery.client.simple.instances.ledger[1].uri",()->"http://127.0.0.1:"+SECOND.getAddress().getPort());
+        r.add("spring.cloud.loadbalancer.health-check.interval",()->"200ms");
+        r.add("spring.cloud.loadbalancer.health-check.refetch-instances-interval",()->"500ms");
         r.add("esep.gateway.issuer-uri",()->BASE+"/realms/esep");r.add("esep.gateway.jwk-set-uri",()->BASE+"/jwks");
         r.add("esep.gateway.write-limit",()->3);r.add("esep.gateway.read-limit",()->100);
         r.add("spring.cloud.gateway.server.webflux.httpclient.response-timeout",()->"500ms");
     }
     @LocalServerPort int port;
     @Autowired GenericContainer<?> redis;
-    @AfterAll static void stop(){BACKEND.stop(0);SERVER_THREADS.shutdownNow();}
+    @AfterAll static void stop(){BACKEND.stop(0);SECOND.stop(0);SERVER_THREADS.shutdownNow();}
     record Result(int status,HttpHeaders headers,String body){}
     Result call(String path,String token,String method,Map<String,String> headers){
         var spec=WebClient.create("http://localhost:"+port).method(HttpMethod.valueOf(method)).uri(path)
@@ -94,6 +114,23 @@ class GatewayIntegrationTest {
     }
     String valid(String role,String subject)throws Exception{
         return token(KEY,BASE+"/realms/esep","esep-api",role,Instant.now().plusSeconds(300),Instant.now().minusSeconds(1),subject);
+    }
+    @Test void independentlyServedInstancesBalanceAndUnhealthyInstanceIsExcluded()throws Exception {
+        String jwt=valid("USER",UUID.randomUUID().toString());
+        java.util.function.Supplier<Set<String>> seen=()->{
+            Set<String> labels=new HashSet<>();
+            for(int i=0;i<6;i++){
+                var response=call("/api/accounts",jwt,"GET",Map.of());assertThat(response.status()).isEqualTo(200);
+                labels.add(response.headers().getFirst("X-Ledger-Instance"));
+            }
+            return labels;
+        };
+        org.awaitility.Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(()->assertThat(seen.get()).containsExactlyInAnyOrder("ledger-1","ledger-2"));
+        SECOND_HEALTHY.set(false);
+        try {
+            org.awaitility.Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(()->assertThat(seen.get()).containsExactly("ledger-1"));
+        } finally {SECOND_HEALTHY.set(true);}
+        org.awaitility.Awaitility.await().atMost(Duration.ofSeconds(10)).untilAsserted(()->assertThat(seen.get()).containsExactlyInAnyOrder("ledger-1","ledger-2"));
     }
     @Test void routesPreserveBearerAndCompatibilityWithoutTrustingUserHeaders()throws Exception{
         String jwt=valid("USER",UUID.randomUUID().toString());

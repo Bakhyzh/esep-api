@@ -53,6 +53,7 @@ services:
   user:
     build: ./services/user-service
     environment:
+      USER_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:18081
       USER_DB_URL: jdbc:postgresql://postgres:5432/user_db
       USER_DB_USERNAME: user_runtime
       USER_DB_PASSWORD: ${USER_DB_PASSWORD:?required}
@@ -61,39 +62,45 @@ services:
       USER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
       OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
-      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
+      JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
     ports: ["127.0.0.1:18083:8083"]
     depends_on:
       postgres: {condition: service_healthy}
       kafka: {condition: service_healthy}
     networks: [default, identity]
+    stop_grace_period: 45s
     mem_limit: 384m
   ledger:
+    image: esep-platform-ledger:local
     build: ./services/ledger-service
     environment:
       SPRING_PROFILES_ACTIVE: local
+      LEDGER_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:18081
       LEDGER_DB_URL: jdbc:postgresql://postgres:5432/ledger_db
       LEDGER_DB_USERNAME: ledger_runtime
       LEDGER_DB_PASSWORD: ${LEDGER_DB_PASSWORD:?required}
       LEDGER_MIGRATION_USERNAME: ledger_migrator
       LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?required}
       LEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      LEDGER_INSTANCE: ledger-1
       LEDGER_IDENTITY_ENABLED: true
       LEDGER_IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/ledger_db
       LEDGER_IDENTITY_DB_USERNAME: ledger_projector
       LEDGER_IDENTITY_DB_PASSWORD: ${LEDGER_IDENTITY_DB_PASSWORD:?required}
       OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
       OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
-      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
+      JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
     ports: ["127.0.0.1:18082:8082"]
     depends_on:
       postgres: {condition: service_healthy}
       kafka: {condition: service_healthy}
     networks: [default, identity]
-    mem_limit: 448m
+    stop_grace_period: 45s
+    mem_limit: 384m
   notification:
     build: ./services/notification-service
     environment:
+      NOTIFICATION_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:18081
       NOTIFICATION_DB_URL: jdbc:postgresql://postgres:5432/notification_db
       NOTIFICATION_DB_USERNAME: notification_runtime
       NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?required}
@@ -105,16 +112,18 @@ services:
       NOTIFICATION_IDENTITY_DB_PASSWORD: ${NOTIFICATION_IDENTITY_DB_PASSWORD:?required}
       OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
       OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
-      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
+      JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
     ports: ["127.0.0.1:18084:8084"]
     depends_on:
       postgres: {condition: service_healthy}
       kafka: {condition: service_healthy}
     networks: [default, identity]
+    stop_grace_period: 45s
     mem_limit: 384m
   analytics:
     build: ./services/analytics-service
     environment:
+      ANALYTICS_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:18081
       ANALYTICS_DB_URL: jdbc:postgresql://postgres:5432/analytics_db
       ANALYTICS_DB_USERNAME: analytics_runtime
       ANALYTICS_DB_PASSWORD: ${ANALYTICS_DB_PASSWORD:?required}
@@ -129,13 +138,14 @@ services:
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
       ANALYTICS_LEDGER_BASE_URL: http://ledger:8082
-      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
+      JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
     ports: ["127.0.0.1:18085:8085"]
     depends_on:
       redis: {condition: service_healthy}
       postgres: {condition: service_healthy}
       kafka: {condition: service_healthy}
     networks: [default, identity]
+    stop_grace_period: 45s
     mem_limit: 384m
   redis:
     image: redis:7-alpine
@@ -149,10 +159,13 @@ services:
       retries: 20
     mem_limit: 96m
   gateway:
+    image: esep-platform-gateway:local
     build: ./services/api-gateway
     environment:
+      SPRING_PROFILES_ACTIVE: replicated
+      GATEWAY_CORS_ORIGINS: http://localhost:5173,http://localhost:18081
       USER_BASE_URL: http://user:8083
-      LEDGER_BASE_URL: http://ledger:8082
+      LEDGER_BASE_URL: lb://ledger
       ANALYTICS_BASE_URL: http://analytics:8085
       NOTIFICATION_BASE_URL: http://notification:8084
       REDIS_HOST: redis
@@ -169,7 +182,90 @@ services:
       analytics: {condition: service_healthy}
       redis: {condition: service_healthy}
     networks: [default, identity]
+    stop_grace_period: 45s
     mem_limit: 320m
+  ledger-2:
+    image: esep-platform-ledger:local
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      LEDGER_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://localhost:18081
+      LEDGER_DB_URL: jdbc:postgresql://postgres:5432/ledger_db
+      LEDGER_DB_USERNAME: ledger_runtime
+      LEDGER_DB_PASSWORD: ${LEDGER_DB_PASSWORD:?required}
+      LEDGER_MIGRATION_USERNAME: ledger_migrator
+      LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?required}
+      LEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      LEDGER_INSTANCE: ledger-2
+      LEDGER_IDENTITY_ENABLED: true
+      LEDGER_IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/ledger_db
+      LEDGER_IDENTITY_DB_USERNAME: ledger_projector
+      LEDGER_IDENTITY_DB_PASSWORD: ${LEDGER_IDENTITY_DB_PASSWORD:?required}
+      OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+      JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+    networks: [default, identity]
+    stop_grace_period: 45s
+    mem_limit: 384m
+  gateway-2:
+    image: esep-platform-gateway:local
+    environment:
+      SPRING_PROFILES_ACTIVE: replicated
+      GATEWAY_CORS_ORIGINS: http://localhost:5173,http://localhost:18081
+      USER_BASE_URL: http://user:8083
+      LEDGER_BASE_URL: lb://ledger
+      ANALYTICS_BASE_URL: http://analytics:8085
+      NOTIFICATION_BASE_URL: http://notification:8084
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+      GATEWAY_INSTANCE: gateway-2
+      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
+    depends_on:
+      user: {condition: service_healthy}
+      ledger: {condition: service_healthy}
+      notification: {condition: service_healthy}
+      analytics: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    networks: [default, identity]
+    stop_grace_period: 45s
+    mem_limit: 320m
+  web:
+    image: esep-platform-web:local
+    build:
+      context: ${PLATFORM_FRONTEND_CONTEXT:?verified frontend checkout required}
+    mem_limit: 64m
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+  edge:
+    image: nginx:1.30.6-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311
+    user: nginx
+    entrypoint: [nginx]
+    command: [-g, 'daemon off;']
+    ports: ["127.0.0.1:18081:8080"]
+    volumes: [./infrastructure/edge/nginx.conf:/etc/nginx/nginx.conf:ro]
+    read_only: true
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_signal: SIGQUIT
+    stop_grace_period: 30s
+    depends_on:
+      gateway: {condition: service_healthy}
+      gateway-2: {condition: service_healthy}
+      web: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, 'wget -qO- http://127.0.0.1:8080/ready | grep -q UP']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 64m
 
 volumes:
   platform-pgdata:
