@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: ledger-service
+  datasource:
+    url: ${LEDGER_DB_URL}
+    username: ${LEDGER_DB_USERNAME}
+    password: ${LEDGER_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 5000
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+  flyway:
+    locations: classpath:db/ledger
+    user: ${LEDGER_MIGRATION_USERNAME:${LEDGER_DB_USERNAME}}
+    password: ${LEDGER_MIGRATION_PASSWORD:${LEDGER_DB_PASSWORD}}
+  kafka:
+    bootstrap-servers: ${LEDGER_KAFKA_BOOTSTRAP_SERVERS}
+    admin:
+      fail-fast: false
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.block.ms: 1000
+        request.timeout.ms: 1000
+        delivery.timeout.ms: 3000
+server:
+  port: ${SERVER_PORT:8082}
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health:
+    probes.enabled: true
+    show-details: never
+    group.readiness.include: readinessState,db
+esep:
+  cors:
+    allowed-origins: ${LEDGER_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    max-age: 1h
+  security.keycloak:
+    issuer-uri: ${OIDC_ISSUER_URI}
+    jwk-set-uri: ${OIDC_JWK_SET_URI}
+  outbox:
+    topic: ${LEDGER_TRANSFERS_TOPIC:esep.ledger.transfers.v1}
+    poll-interval: 1s
+    batch-size: 100
+    send-timeout: 2s
+    publisher-enabled: ${LEDGER_OUTBOX_ENABLED:true}

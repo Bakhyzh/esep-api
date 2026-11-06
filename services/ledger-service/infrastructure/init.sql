@@ -1,0 +1,13 @@
+\set ON_ERROR_STOP on
+\getenv migration_password LEDGER_MIGRATION_PASSWORD
+\getenv runtime_password LEDGER_DB_PASSWORD
+CREATE ROLE ledger_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'migration_password';
+CREATE ROLE ledger_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'runtime_password';
+CREATE DATABASE ledger_db OWNER ledger_migrator;
+REVOKE CONNECT ON DATABASE ledger_db FROM PUBLIC;
+GRANT CONNECT ON DATABASE ledger_db TO ledger_runtime;
+\connect ledger_db
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO ledger_runtime;
+ALTER DEFAULT PRIVILEGES FOR ROLE ledger_migrator IN SCHEMA public GRANT SELECT ON TABLES TO ledger_runtime;
+ALTER DEFAULT PRIVILEGES FOR ROLE ledger_migrator IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO ledger_runtime;

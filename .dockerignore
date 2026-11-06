@@ -13,3 +13,6 @@ scripts/
 *.md
 .env
 .env.*
+
+# Independently built services are not part of the monolith image context.
+services/

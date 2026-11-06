@@ -1,0 +1,1270 @@
+{
+  "components": {
+    "schemas": {
+      "AccountResponse": {
+        "properties": {
+          "balance": {
+            "type": "number"
+          },
+          "closedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "CLOSED"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "USER",
+              "SYSTEM"
+            ],
+            "type": "string"
+          },
+          "userId": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ApiError": {
+        "description": "Every error response (RFC 9457 problem+json with a stable code)",
+        "properties": {
+          "code": {
+            "description": "Stable machine-readable code",
+            "enum": [
+              "VALIDATION_FAILED",
+              "INVALID_REQUEST",
+              "MALFORMED_REQUEST",
+              "MISSING_PARAMETER",
+              "UNAUTHORIZED",
+              "INVALID_CREDENTIALS",
+              "FORBIDDEN",
+              "RESOURCE_NOT_FOUND",
+              "METHOD_NOT_ALLOWED",
+              "UNSUPPORTED_MEDIA_TYPE",
+              "CONFLICT",
+              "EMAIL_ALREADY_REGISTERED",
+              "DUPLICATE_ACCOUNT",
+              "CONCURRENT_MODIFICATION",
+              "BUSINESS_RULE_VIOLATED",
+              "INSUFFICIENT_FUNDS",
+              "ACCOUNT_CLOSED",
+              "ACCOUNT_NOT_EMPTY",
+              "SAME_ACCOUNT_TRANSFER",
+              "CURRENCY_MISMATCH",
+              "UNSUPPORTED_CURRENCY",
+              "SYSTEM_ACCOUNT_OPERATION",
+              "INVALID_AMOUNT",
+              "IDEMPOTENCY_KEY_REUSED",
+              "BALANCE_LIMIT_EXCEEDED",
+              "RATE_LIMITED",
+              "INTERNAL_ERROR"
+            ],
+            "type": "string"
+          },
+          "detail": {
+            "description": "Human-readable message, may change; do not parse it",
+            "example": "Insufficient funds on account 2",
+            "type": "string"
+          },
+          "errors": {
+            "description": "Present only for VALIDATION_FAILED",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            },
+            "type": "array"
+          },
+          "instance": {
+            "example": "/api/transfers",
+            "type": "string"
+          },
+          "status": {
+            "example": 422,
+            "format": "int32",
+            "type": "integer"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "title": {
+            "example": "Business rule violated",
+            "type": "string"
+          },
+          "type": {
+            "example": "about:blank",
+            "type": "string"
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "properties": {
+          "currency": {
+            "minLength": 1,
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "currency"
+        ],
+        "type": "object"
+      },
+      "DepositRequest": {
+        "properties": {
+          "accountId": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "amount": {
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "accountId",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "Entry": {
+        "properties": {
+          "accountId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "direction": {
+            "enum": [
+              "DEBIT",
+              "CREDIT"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FieldError": {
+        "description": "Present only for VALIDATION_FAILED",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "OperationResponse": {
+        "properties": {
+          "accountId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "counterpartyAccountId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "DEBIT",
+              "CREDIT"
+            ],
+            "type": "string"
+          },
+          "entryId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "transactionId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "TRANSFER",
+              "DEPOSIT",
+              "WITHDRAWAL"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PageResponseOperationResponse": {
+        "properties": {
+          "content": {
+            "items": {
+              "$ref": "#/components/schemas/OperationResponse"
+            },
+            "type": "array"
+          },
+          "page": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "size": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "totalElements": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "totalPages": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "TransactionResponse": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/Entry"
+            },
+            "type": "array"
+          },
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "COMPLETED",
+              "FAILED"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "TRANSFER",
+              "DEPOSIT",
+              "WITHDRAWAL"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "TransferRequest": {
+        "properties": {
+          "amount": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "fromAccountId": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "toAccountId": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "amount",
+          "fromAccountId",
+          "toAccountId"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "Wallets and transfers on a double-entry ledger. Errors: application/problem+json with a stable `code` (see the ApiError schema).",
+    "title": "ESEP Ledger Service",
+    "version": "v1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/accounts": {
+      "get": {
+        "operationId": "getByUser",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "List own accounts (ADMIN: ?userId= for another user)",
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "post": {
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Open an account in a currency (one active account per currency)",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/accounts/{id}": {
+      "get": {
+        "operationId": "getById_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Get an own account (ADMIN: any)",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/accounts/{id}/close": {
+      "post": {
+        "operationId": "close",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Close an own account with zero balance",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/deposits": {
+      "post": {
+        "operationId": "deposit",
+        "parameters": [
+          {
+            "description": "Unique per logical operation (e.g. a UUID generated by the client). Repeat it when retrying the same operation: the original result is returned and money moves once.",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DepositRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "Replay of an earlier request with the same Idempotency-Key"
+          },
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "Deposit completed"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Deposit money from the system funding account (ADMIN only)",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/api/transactions": {
+      "get": {
+        "operationId": "history",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "accountId",
+            "required": false,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "zone",
+            "required": false,
+            "schema": {
+              "default": "UTC",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "format": "int32",
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageResponseOperationResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Operation history of the current user, newest first (filter by account and calendar days)",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/api/transactions/{id}": {
+      "get": {
+        "operationId": "getById",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "int64",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Get a transaction with its ledger entries (participants and ADMIN)",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    },
+    "/api/transfers": {
+      "post": {
+        "operationId": "transfer",
+        "parameters": [
+          {
+            "description": "Unique per logical operation (e.g. a UUID generated by the client). Repeat it when retrying the same operation: the original result is returned and money moves once.",
+            "example": "3f1c2b8e-6c1d-4c7a-9a55-0b6f3e2d9a10",
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": true,
+            "schema": {
+              "maxLength": 64,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "Replay of an earlier request with the same Idempotency-Key",
+            "headers": {
+              "Idempotent-Replayed": {
+                "description": "Always \"true\" on a replay",
+                "style": "simple"
+              }
+            }
+          },
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionResponse"
+                }
+              }
+            },
+            "description": "Transfer completed",
+            "headers": {
+              "Location": {
+                "description": "URL of the created transaction",
+                "style": "simple"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Validation failed or invalid parameters (VALIDATION_FAILED, INVALID_REQUEST, ...)"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Missing, invalid or expired token (UNAUTHORIZED)"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Authenticated, but not allowed (FORBIDDEN)"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Resource not found or belongs to another user (RESOURCE_NOT_FOUND)"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict or concurrent modification, retry (CONFLICT, CONCURRENT_MODIFICATION, ...)"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Business rule violated (INSUFFICIENT_FUNDS, CURRENCY_MISMATCH, ...)"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unexpected error (INTERNAL_ERROR)"
+          }
+        },
+        "summary": "Transfer money from an own account (201; retry with the same key: 200 + Idempotent-Replayed)",
+        "tags": [
+          "Transactions"
+        ]
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "servers": [
+    {
+      "description": "Isolated local development",
+      "url": "http://localhost:8082"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Wallets of the current user",
+      "name": "Accounts"
+    },
+    {
+      "description": "Double-entry transfers and deposits. POST requests require an Idempotency-Key header: a retry with the same key returns the original result",
+      "name": "Transactions"
+    }
+  ]
+}

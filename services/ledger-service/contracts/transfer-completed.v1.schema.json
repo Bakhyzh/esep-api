@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LedgerTransferCompletedV1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "eventType",
+    "eventId",
+    "transactionId",
+    "fromAccountId",
+    "fromUserId",
+    "toAccountId",
+    "toUserId",
+    "amount",
+    "currency",
+    "occurredAt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "eventType": {
+      "const": "TRANSFER_COMPLETED"
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "transactionId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "fromAccountId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "fromUserId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "toAccountId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "toUserId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "amount": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "multipleOf": 0.0001
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": true
+}

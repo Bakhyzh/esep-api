@@ -1,0 +1,75 @@
+name: esep-ledger-local
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ledger_bootstrap
+      POSTGRES_PASSWORD: ${LEDGER_BOOTSTRAP_PASSWORD:?Set LEDGER_BOOTSTRAP_PASSWORD}
+      LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?Set LEDGER_MIGRATION_PASSWORD}
+      LEDGER_DB_PASSWORD: ${LEDGER_DB_PASSWORD:?Set LEDGER_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:55434:5432"
+    volumes:
+      - ledger-pgdata:/var/lib/postgresql/data
+      - ./infrastructure/init.sql:/docker-entrypoint-initdb.d/10-ledger.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger_bootstrap -d ledger_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 384m
+  kafka:
+    image: apache/kafka:3.9.1
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:59095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    ports:
+      - "127.0.0.1:59095:9094"
+    volumes:
+      - ledger-kafka:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+    mem_limit: 512m
+  ledger:
+    build: .
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      LEDGER_DB_URL: jdbc:postgresql://postgres:5432/ledger_db
+      LEDGER_DB_USERNAME: ledger_runtime
+      LEDGER_DB_PASSWORD: ${LEDGER_DB_PASSWORD:?Set LEDGER_DB_PASSWORD}
+      LEDGER_MIGRATION_USERNAME: ledger_migrator
+      LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?Set LEDGER_MIGRATION_PASSWORD}
+      LEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      OIDC_ISSUER_URI: http://localhost:8180/realms/esep
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+    ports:
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - default
+      - identity
+    mem_limit: 512m
+volumes:
+  ledger-pgdata:
+  ledger-kafka:
+networks:
+  identity:
+    external: true
+    name: esep-identity-dev_identity

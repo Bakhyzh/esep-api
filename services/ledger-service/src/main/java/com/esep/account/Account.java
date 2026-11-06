@@ -1,0 +1,131 @@
+package com.esep.account;
+
+import com.esep.common.exception.BusinessRuleException;
+import com.esep.common.exception.ErrorCode;
+import com.esep.principal.LedgerPrincipal;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Currency;
+
+@Entity
+@Table(name = "accounts")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Account {
+
+    /** NUMERIC(19,4) holds at most 15 digits before the point, in both directions. */
+    static final BigDecimal BALANCE_LIMIT = new BigDecimal("999999999999999.9999");
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false, updatable = false)
+    private LedgerPrincipal user;
+
+    @Column(nullable = false, length = 3, updatable = false)
+    private Currency currency;
+
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal balance;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private AccountStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10, updatable = false)
+    private AccountType type;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt;
+
+    @Column(name = "closed_at")
+    private Instant closedAt;
+
+    public Account(LedgerPrincipal user, Currency currency) {
+        this.user = user;
+        this.currency = currency;
+        this.balance = BigDecimal.ZERO.setScale(4);
+        this.status = AccountStatus.ACTIVE;
+        this.type = AccountType.USER;
+    }
+
+    /**
+     * Money leaves the account. Call it only from a ledger posting,
+     * so the balance always matches the sum of ledger entries.
+     */
+    public void debit(BigDecimal amount) {
+        requireActive();
+        if (type == AccountType.USER && balance.compareTo(amount) < 0) {
+            throw new BusinessRuleException(ErrorCode.INSUFFICIENT_FUNDS, "Insufficient funds on account " + id);
+        }
+        // a system account goes negative by every deposit, so it can hit the limit from below
+        this.balance = withinLimit(balance.subtract(amount));
+    }
+
+    /** Money enters the account. Same rule as debit: only via a ledger posting. */
+    public void credit(BigDecimal amount) {
+        requireActive();
+        this.balance = withinLimit(balance.add(amount));
+    }
+
+    public boolean isSystem() {
+        return type == AccountType.SYSTEM;
+    }
+
+    public void close() {
+        if (isSystem()) {
+            throw new BusinessRuleException(ErrorCode.SYSTEM_ACCOUNT_OPERATION, "System account " + id + " cannot be closed");
+        }
+        if (status == AccountStatus.CLOSED) {
+            throw new BusinessRuleException(ErrorCode.ACCOUNT_CLOSED, "Account " + id + " is already closed");
+        }
+        // compareTo, not equals: 0.0000 and 0 are not equal by equals() because of different scale
+        if (balance.compareTo(BigDecimal.ZERO) != 0) {
+            throw new BusinessRuleException(ErrorCode.ACCOUNT_NOT_EMPTY,
+                    "Account " + id + " has non-zero balance and cannot be closed");
+        }
+        this.status = AccountStatus.CLOSED;
+        this.closedAt = Instant.now();
+    }
+
+    // checked here, not left to the database: there it is a "numeric field overflow"
+    // that reaches the client as a generic 409 data conflict
+    private BigDecimal withinLimit(BigDecimal newBalance) {
+        if (newBalance.abs().compareTo(BALANCE_LIMIT) > 0) {
+            throw new BusinessRuleException(ErrorCode.BALANCE_LIMIT_EXCEEDED,
+                    "Balance of account " + id + " would exceed " + BALANCE_LIMIT.toPlainString());
+        }
+        return newBalance;
+    }
+
+    private void requireActive() {
+        if (status != AccountStatus.ACTIVE) {
+            throw new BusinessRuleException(ErrorCode.ACCOUNT_CLOSED, "Account " + id + " is closed");
+        }
+    }
+}

@@ -336,3 +336,11 @@ See [local cutover and activation](docs/runbooks/keycloak-local-cutover.md).
 Use the explicit `local-keycloak` profile and isolated Compose project; production
 authentication remains unchanged. The verified esep-web repository supports
 `VITE_AUTH_MODE=keycloak` with Code + PKCE S256.
+
+## Independent Ledger Service (Phase 3.1)
+
+The financial core is also available as an independently built local service in
+[services/ledger-service](services/ledger-service/README.md), using isolated
+`ledger_db` and a versioned Kafka topic. Existing monolith routes/data remain
+unchanged. See the [extraction report](docs/architecture/PHASE_3_1_LEDGER_EXTRACTION_REPORT.md)
+and [migration gates](docs/runbooks/ledger-extraction-migration.md).
