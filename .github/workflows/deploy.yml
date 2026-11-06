@@ -1,12 +1,17 @@
 name: Deploy
 
-# push to main: tests -> image to GHCR -> deploy to the VPS over SSH.
+# push to main: tests -> image to GHCR; production deploy requires explicit manual authorization.
 # Each stage runs only if the previous one succeeded (needs:).
 on:
   push:
     branches: [main]
-  # manual re-run from the Actions tab (e.g. after fixing the server); deploys the selected commit
+  # Manual dispatch may deploy only when the explicit production input is selected.
   workflow_dispatch:
+    inputs:
+      deploy_production:
+        description: Explicitly authorize production deployment of this revision
+        type: boolean
+        default: false
 
 # one deploy at a time; a newer push waits instead of cancelling a deploy halfway through
 concurrency:
@@ -66,7 +71,7 @@ jobs:
     needs: image
     # switched on by the repository variable DEPLOY_ENABLED=true once the server is ready (docs/DEPLOY.md);
     # until then main still gets tested images in GHCR, but nobody tries to SSH into a server that does not exist
-    if: vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_production && vars.DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: production

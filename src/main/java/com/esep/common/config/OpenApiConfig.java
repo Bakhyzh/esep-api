@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-// adds the "Authorize" button to Swagger UI: paste the accessToken from /api/auth/login there
+// Bearer tokens are obtained from the active identity provider.
 @Configuration
 @OpenAPIDefinition(info = @Info(title = "Esep API", version = "v1",
         description = "Wallets and transfers on a double-entry ledger. Errors: application/problem+json "

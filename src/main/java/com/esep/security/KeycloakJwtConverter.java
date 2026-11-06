@@ -2,6 +2,8 @@ package com.esep.security;
 
 import com.esep.user.IdentityResolutionService;
 import com.esep.user.Role;
+import com.esep.user.IdentityProvisioningService;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.convert.converter.Converter;
@@ -23,6 +25,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class KeycloakJwtConverter implements Converter<Jwt, AbstractAuthenticationToken> {
     private final IdentityResolutionService identities;
+    private final IdentityProvisioningService provisioning;
+    @Value("${esep.security.keycloak.provision-new-users:false}")
+    private boolean provisionNewUsers;
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
@@ -34,6 +39,9 @@ public class KeycloakJwtConverter implements Converter<Jwt, AbstractAuthenticati
             return new JwtAuthenticationToken(jwt, List.of());
         }
         var userId = identities.resolve(jwt.getIssuer().toString(), jwt.getSubject());
+        if (userId.isEmpty() && provisionNewUsers && Boolean.TRUE.equals(jwt.getClaim("email_verified"))) {
+            userId = provisioning.provision(jwt.getIssuer().toString(), jwt.getSubject(), jwt.getClaimAsString("email"));
+        }
         if (userId.isEmpty()) {
             return new JwtAuthenticationToken(jwt, List.of());
         }

@@ -7,3 +7,8 @@ esep:
   # No account creation, password mutation, or funding on an OIDC application start.
   demo:
     enabled: false
+springdoc:
+  swagger-ui:
+    oauth:
+      client-id: esep-web
+      use-pkce-with-authorization-code-grant: true

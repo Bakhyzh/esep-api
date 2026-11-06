@@ -329,3 +329,10 @@ Production values: [`.env.example`](.env.example) and [docs/DEPLOY.md](docs/DEPL
   (e.g. Bucket4j on Redis) plus a per-email counter would be the next step.
 - All deposits in one currency lock the same system account row (a hot spot under heavy load).
 - Published outbox rows are never cleaned up (needs a retention job); the DLT has no automatic replay.
+
+## Prepared local Keycloak authentication
+
+See [local cutover and activation](docs/runbooks/keycloak-local-cutover.md).
+Use the explicit `local-keycloak` profile and isolated Compose project; production
+authentication remains unchanged. The verified esep-web repository supports
+`VITE_AUTH_MODE=keycloak` with Code + PKCE S256.

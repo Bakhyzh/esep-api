@@ -24,8 +24,8 @@ public class KeycloakSecurityConfig {
     @Bean
     JwtDecoder keycloakJwtDecoder(KeycloakProperties properties, Environment environment) {
         if (environment.acceptsProfiles(Profiles.of("prod"))
-                || !environment.acceptsProfiles(Profiles.of("dev", "test"))) {
-            throw new IllegalStateException("keycloak-integration requires dev or test and forbids prod");
+                || !environment.acceptsProfiles(Profiles.of("dev", "test", "local-keycloak"))) {
+            throw new IllegalStateException("keycloak-integration requires dev or test or local-keycloak and forbids prod");
         }
         if (environment.getProperty("esep.demo.enabled", Boolean.class, false)) {
             throw new IllegalStateException("Demo provisioning must be disabled for keycloak-integration");

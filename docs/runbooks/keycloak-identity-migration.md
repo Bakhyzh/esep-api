@@ -1,3 +1,7 @@
+> Phase 2.3: for the prepared local cutover, provisioning, executable linking and activation,
+> use [keycloak-local-cutover.md](keycloak-local-cutover.md). The Phase 2.2 trial below
+> remains a historical/manual rollback reference.
+
 # Phase 2.2: explicit identity linking and integration trial
 
 This is a controlled LOCAL/TEST trial, not a production cutover. The default and

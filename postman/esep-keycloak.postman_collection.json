@@ -1,0 +1,151 @@
+{
+  "info": {
+    "name": "ESEP \u2014 local Keycloak Code + PKCE",
+    "description": "Local Keycloak only. Obtain an access token using OAuth2 Authorization Code with PKCE S256; never password grant. Register the exact Postman callback URI with a separate public client before use. Do not export tokens.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "oauth2",
+    "oauth2": [
+      {
+        "key": "grant_type",
+        "value": "authorization_code_with_pkce",
+        "type": "string"
+      },
+      {
+        "key": "authUrl",
+        "value": "http://localhost:8180/realms/esep/protocol/openid-connect/auth",
+        "type": "string"
+      },
+      {
+        "key": "accessTokenUrl",
+        "value": "http://localhost:8180/realms/esep/protocol/openid-connect/token",
+        "type": "string"
+      },
+      {
+        "key": "clientId",
+        "value": "{{oidcClientId}}",
+        "type": "string"
+      },
+      {
+        "key": "scope",
+        "value": "openid",
+        "type": "string"
+      },
+      {
+        "key": "challengeAlgorithm",
+        "value": "S256",
+        "type": "string"
+      },
+      {
+        "key": "addTokenTo",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "oidcClientId",
+      "value": "esep-postman"
+    },
+    {
+      "key": "accountId",
+      "value": ""
+    },
+    {
+      "key": "recipientAccountId",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Current profile",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/auth/me"
+      }
+    },
+    {
+      "name": "My accounts",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/accounts"
+      }
+    },
+    {
+      "name": "Open account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/api/accounts",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"currency\": \"KZT\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Account balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/accounts/{{accountId}}"
+      }
+    },
+    {
+      "name": "Transfer",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotencyKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/api/transfers",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fromAccountId\": {{accountId}},\n  \"toAccountId\": {{recipientAccountId}},\n  \"amount\": \"10.0000\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Notifications",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/notifications"
+      }
+    }
+  ]
+}

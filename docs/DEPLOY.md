@@ -9,7 +9,8 @@ browser ──HTTPS──> GitHub Pages            https://bakhyzh.github.io/ese
 
 - **Frontend** (esep-web): push to `main` → GitHub Actions builds with `VITE_API_URL` → GitHub Pages.
 - **Backend** (esep-api): push to `main` → `./mvnw verify` → image `ghcr.io/bakhyzh/esep-api:<sha>` →
-  SSH to the VPS → `docker compose pull && up -d --wait` → HTTPS health check.
+  image publication. SSH deployment requires a manual workflow_dispatch with
+  deploy_production=true, DEPLOY_ENABLED=true and the production environment gates.
 
 Placeholders used below: `203.0.113.10` = server IP, `api.example.com` = API domain,
 `bakhyzh.github.io` = Pages origin. Replace them with your values. **Never commit real values.**
@@ -218,7 +219,7 @@ Order matters: the server and its `.env` first, then the switch that lets GitHub
 2. [ ] Secrets and variables of esep-api set (2.1), **`DEPLOY_ENABLED` still unset**.
 3. [ ] Merge esep-api PRs in order: `feature/prod-deploy` → `feature/ci-cd` → `feature/deploy-docs`.
        The Deploy run on `main` tests the code and pushes the image; the deploy job is skipped.
-4. [ ] Set the variable `DEPLOY_ENABLED=true`, then Actions → **Deploy** → **Run workflow** (branch `main`).
+4. [ ] Set the variable `DEPLOY_ENABLED=true`, then Actions → **Deploy** → **Run workflow** (branch `main`, explicitly select `deploy_production=true`).
        The run uploads `docker-compose.prod.yml` and `Caddyfile`, pulls, starts and waits for health.
        The first start takes longer: images download, Flyway creates the schema, Caddy gets the certificate.
 5. [ ] Check the API from your computer:

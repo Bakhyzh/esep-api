@@ -1,0 +1,12 @@
+# Prepared local cutover. Explicit profile; production remains unchanged.
+spring:
+  flyway:
+    locations: classpath:db/migration
+esep:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:local-unused-legacy-encoder-0123456789abcdef}
+    keycloak:
+      provision-new-users: true
+  demo:
+    enabled: false

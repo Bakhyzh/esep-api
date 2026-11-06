@@ -1,0 +1,53 @@
+# Isolated prepared local cutover; never mount the existing financial volume.
+name: esep-cutover-local
+services:
+  postgres:
+    extends:
+      file: docker-compose.yml
+      service: postgres
+    container_name: esep-cutover-postgres
+    environment:
+      POSTGRES_DB: esep_oidc
+    ports: !override
+      - "127.0.0.1:55433:5432"
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+    container_name: esep-cutover-redis
+    ports: !override
+      - "127.0.0.1:56379:6379"
+  kafka:
+    extends:
+      file: docker-compose.yml
+      service: kafka
+    container_name: esep-cutover-kafka
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:59094
+    ports: !override
+      - "127.0.0.1:59094:9094"
+    volumes:
+      - cutover-kafka:/var/lib/kafka/data
+  app:
+    extends:
+      file: docker-compose.yml
+      service: app
+    container_name: esep-cutover-api
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/esep_oidc
+      SPRING_PROFILES_ACTIVE: local-keycloak
+      OIDC_ISSUER_URI: http://localhost:8180/realms/esep
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    ports: !override
+      - "127.0.0.1:8081:8081"
+    networks:
+      - default
+      - identity
+volumes:
+  esep-pgdata:
+  cutover-kafka:
+networks:
+  identity:
+    external: true
+    name: esep-identity-dev_identity

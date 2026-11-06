@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.web.util.UrlPathHelper;
@@ -26,6 +27,7 @@ import java.util.Map;
  */
 @Slf4j
 @Component
+@Profile("!keycloak-integration")
 @EnableConfigurationProperties(RateLimitProperties.class)
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 

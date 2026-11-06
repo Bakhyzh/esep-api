@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import java.util.List;
 import java.util.Locale;
@@ -38,6 +39,7 @@ import java.util.Locale;
  */
 @Slf4j
 @Component
+@Profile("!keycloak-integration")
 @ConditionalOnProperty(prefix = "esep.demo", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties(DemoProperties.class)
 @RequiredArgsConstructor
