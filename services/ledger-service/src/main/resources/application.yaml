@@ -24,6 +24,13 @@ spring:
     bootstrap-servers: ${LEDGER_KAFKA_BOOTSTRAP_SERVERS}
     admin:
       fail-fast: false
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
     producer:
       acks: all
       properties:
@@ -52,3 +59,9 @@ esep:
     batch-size: 100
     send-timeout: 2s
     publisher-enabled: ${LEDGER_OUTBOX_ENABLED:true}
+
+  identity:
+    enabled: ${LEDGER_IDENTITY_ENABLED:false}
+    jdbc-url: ${LEDGER_IDENTITY_DB_URL:}
+    username: ${LEDGER_IDENTITY_DB_USERNAME:}
+    password: ${LEDGER_IDENTITY_DB_PASSWORD:}

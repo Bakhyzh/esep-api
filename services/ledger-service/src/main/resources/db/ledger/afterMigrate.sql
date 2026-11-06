@@ -8,4 +8,8 @@ BEGIN
    GRANT INSERT ON ledger_entries TO ledger_runtime;
    -- Deliberately no principal/binding mutation or historical row DELETE grants.
  END IF;
+ IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='ledger_projector') THEN
+   GRANT SELECT,INSERT,UPDATE ON ledger_principals,ledger_identity_bindings,identity_projection_state,identity_processed_events TO ledger_projector;
+   GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO ledger_projector;
+ END IF;
 END $$;

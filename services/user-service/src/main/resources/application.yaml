@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: user-service
+  datasource:
+    url: ${USER_DB_URL}
+    username: ${USER_DB_USERNAME}
+    password: ${USER_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 5000
+  flyway:
+    locations: classpath:db/user
+    user: ${USER_MIGRATION_USERNAME:${USER_DB_USERNAME}}
+    password: ${USER_MIGRATION_PASSWORD:${USER_DB_PASSWORD}}
+  kafka:
+    bootstrap-servers: ${USER_KAFKA_BOOTSTRAP_SERVERS}
+    admin:
+      fail-fast: false
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.block.ms: 1000
+        request.timeout.ms: 1000
+        delivery.timeout.ms: 3000
+server:
+  port: ${SERVER_PORT:8083}
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health:
+    probes.enabled: true
+    show-details: never
+    group.readiness.include: readinessState,db
+esep:
+  cors:
+    allowed-origins: ${USER_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    max-age: 1h
+  security.keycloak:
+    issuer-uri: ${OIDC_ISSUER_URI}
+    jwk-set-uri: ${OIDC_JWK_SET_URI}
+  outbox:
+    topic: ${USER_EVENTS_TOPIC:esep.users.v1}
+    poll-interval: 1s
+    batch-size: 100
+    send-timeout: 2s
+    publisher-enabled: ${USER_OUTBOX_ENABLED:true}
+
+  # Producer payloads never include passwords or access tokens.

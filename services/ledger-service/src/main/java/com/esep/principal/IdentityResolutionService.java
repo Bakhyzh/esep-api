@@ -16,7 +16,8 @@ public class IdentityResolutionService {
         return jdbc.queryForList("""
                 SELECT i.user_id FROM ledger_identity_bindings i
                 JOIN ledger_principals p ON p.id=i.user_id
-                WHERE i.issuer=? AND i.subject=? AND p.kind='HUMAN'
+                LEFT JOIN identity_projection_state s ON s.user_id=p.id
+                WHERE i.issuer=? AND i.subject=? AND p.kind='HUMAN' AND (s.user_id IS NULL OR s.status='ACTIVE')
                 """, Long.class, issuer, subject).stream().findFirst();
     }
 }

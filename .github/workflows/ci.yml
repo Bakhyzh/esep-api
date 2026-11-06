@@ -71,3 +71,32 @@ jobs:
 
       - name: Build independent Ledger image
         run: docker build -t esep-ledger:ci services/ledger-service
+
+  user:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: services/user-service/pom.xml
+      - name: User authority integration and security
+        run: ./mvnw -B -f services/user-service/pom.xml verify
+      - name: Platform configuration
+        env:
+          PLATFORM_DB_BOOTSTRAP_PASSWORD: ci-placeholder-bootstrap
+          USER_MIGRATION_PASSWORD: ci-placeholder-user-migration
+          USER_DB_PASSWORD: ci-placeholder-user-runtime
+          LEDGER_MIGRATION_PASSWORD: ci-placeholder-ledger-migration
+          LEDGER_DB_PASSWORD: ci-placeholder-ledger-runtime
+          LEDGER_IDENTITY_DB_PASSWORD: ci-placeholder-projector
+        run: docker compose -f compose.platform.yaml config -q
+      - name: User committed-source secret scan
+        run: |
+          mkdir -p /tmp/user-scan
+          git archive HEAD services/user-service compose.platform.yaml infrastructure/platform contracts/events tests/e2e/identity-flow.py docs/architecture/PHASE_A_USER_SERVICE_REPORT.md | tar -x -C /tmp/user-scan
+          docker run --rm -v /tmp/user-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
+      - name: Independent User image
+        run: docker build -t esep-user:ci services/user-service

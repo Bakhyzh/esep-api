@@ -19,6 +19,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health", "/actuator/health/**", "/error", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/internal/identity/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/deposits").hasRole("ADMIN")
                         .requestMatchers("/api/accounts/**", "/api/transfers", "/api/transactions/**").hasAnyRole("USER","ADMIN")
                         .anyRequest().denyAll())

@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://unused/test
+    username: test
+    password: test
+  flyway:
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+  kafka:
+    bootstrap-servers: unused:9092
+esep:
+  security.keycloak:
+    issuer-uri: http://localhost:8180/realms/esep
+    jwk-set-uri: http://localhost:8180/realms/esep/protocol/openid-connect/certs
+  outbox:
+    publisher-enabled: false
