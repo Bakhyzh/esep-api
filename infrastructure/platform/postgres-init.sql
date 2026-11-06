@@ -24,3 +24,18 @@ REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO ledger_runtime,ledger_projector;
 ALTER DEFAULT PRIVILEGES FOR ROLE ledger_migrator IN SCHEMA public GRANT SELECT ON TABLES TO ledger_runtime;
 ALTER DEFAULT PRIVILEGES FOR ROLE ledger_migrator IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO ledger_runtime,ledger_projector;
+
+\connect postgres
+\getenv notification_migration_password NOTIFICATION_MIGRATION_PASSWORD
+\getenv notification_runtime_password NOTIFICATION_DB_PASSWORD
+\getenv notification_projection_password NOTIFICATION_IDENTITY_DB_PASSWORD
+SELECT format('CREATE ROLE notification_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L',:'notification_migration_password') WHERE NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='notification_migrator') \gexec
+SELECT format('CREATE ROLE notification_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L',:'notification_runtime_password') WHERE NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='notification_runtime') \gexec
+SELECT format('CREATE ROLE notification_projector LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L',:'notification_projection_password') WHERE NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='notification_projector') \gexec
+SELECT 'CREATE DATABASE notification_db OWNER notification_migrator' WHERE NOT EXISTS(SELECT 1 FROM pg_database WHERE datname='notification_db') \gexec
+REVOKE CONNECT ON DATABASE notification_db FROM PUBLIC;
+GRANT CONNECT ON DATABASE notification_db TO notification_runtime,notification_projector;
+\connect notification_db
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO notification_runtime,notification_projector;
+ALTER DEFAULT PRIVILEGES FOR ROLE notification_migrator IN SCHEMA public GRANT SELECT ON TABLES TO notification_runtime;

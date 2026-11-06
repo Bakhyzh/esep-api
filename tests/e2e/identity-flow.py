@@ -9,16 +9,17 @@ import secrets
 import subprocess
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 ROOT=Path(__file__).resolve().parents[2]
 
 
-def api(base,path,token=None,data=None,key=None):
+def api(base,path,token=None,data=None,key=None,method=None):
     headers={'Accept':'application/json'}
     if token:headers['Authorization']='Bearer '+token
     if data is not None:headers['Content-Type']='application/json'
     if key:headers['Idempotency-Key']=key
-    request=urllib.request.Request(base+path,headers=headers,data=None if data is None else json.dumps(data).encode())
+    request=urllib.request.Request(base+path,headers=headers,data=None if data is None else json.dumps(data).encode(),method=method)
     try:response=urllib.request.urlopen(request,timeout=10)
     except urllib.error.HTTPError as error:response=error
     with response:
@@ -39,7 +40,14 @@ def main():
     parser.add_argument('--identity-dir',type=Path,required=True)
     parser.add_argument('--user-url',default='http://localhost:18083')
     parser.add_argument('--ledger-url',default='http://localhost:18082')
+    parser.add_argument('--notification-url')
+    parser.add_argument('--broker-recovery',action='store_true')
     args=parser.parse_args()
+    for base in [args.user_url,args.ledger_url,args.notification_url]:
+        if base is not None:
+            parsed=urllib.parse.urlsplit(base)
+            if parsed.scheme!='http' or parsed.hostname not in ('localhost','127.0.0.1') or parsed.port not in (18082,18083,18084):
+                raise RuntimeError('E2E only accepts isolated platform loopback ports')
     helper=runpy.run_path(str(ROOT/'infrastructure/keycloak/validate.py'))
     dc=helper['DC'];dc[dc.index('--env-file')+1]=str(args.identity_dir.resolve()/'.env')
     model=json.loads(subprocess.check_output(dc+['config','--format','json'],text=True))
@@ -73,11 +81,41 @@ def main():
         check(api(args.ledger_url,'/api/transfers',operator[0],transfer,secrets.token_hex(12))[0]==404,'ADMIN gained source ownership')
         check(api(args.ledger_url,'/api/accounts/'+str(a['id']),alice[0])[1]['balance']==Decimal('87.6544'),'Incorrect financial balance')
         passed('Real Keycloak -> automatic User provisioning -> transactional outbox -> Kafka -> Ledger projection; original allocated ID and money invariants preserved')
+        if args.notification_url:
+            wait(lambda:api(args.notification_url,'/api/notifications',operator[0])[0]==200,'Notification operator identity pending')
+            def delivered(token):
+                status,items=api(args.notification_url,'/api/notifications',token)
+                return status==200 and any('12.3456 KZT' in x['message'] for x in items)
+            wait(lambda:delivered(alice[0]) and delivered(bob[0]),'Committed transfer did not reach Notification')
+            own=api(args.notification_url,'/api/notifications',alice[0])[1]
+            peer=api(args.notification_url,'/api/notifications',bob[0])[1]
+            check(len(own)==1 and len(peer)==1,'Transfer replay duplicated notifications')
+            check(api(args.notification_url,'/api/notifications/'+str(peer[0]['id'])+'/read',alice[0],{},method='PATCH')[0]==404,'Foreign notification writable')
+            check(api(args.notification_url,'/api/notifications/'+str(peer[0]['id'])+'/read',operator[0],{},method='PATCH')[0]==404,'ADMIN gained notification ownership')
+            check(api(args.notification_url,'/api/notifications/unread-count',alice[0])[1]['count']==1,'Unread count incorrect')
+            check(api(args.notification_url,'/api/notifications/'+str(own[0]['id'])+'/read',alice[0],{},method='PATCH')[0]==200,'Mark read failed')
+            check(api(args.notification_url,'/api/notifications/unread-count',alice[0])[1]['count']==0,'Read status not persisted')
+            passed('Actual Ledger outbox -> Kafka -> Notification; replay produced one per owner; read/unread and foreign/ADMIN ownership enforced')
+            if args.broker_recovery:
+                platform=['docker','compose','-p','esep-platform-local','-f',str(ROOT/'compose.platform.yaml'),'--env-file',str(ROOT/'.env.platform')]
+                subprocess.run(platform+['stop','kafka'],check=True,stdout=subprocess.DEVNULL)
+                try:
+                    check(api(args.ledger_url,'/api/transfers',alice[0],dict(transfer,amount='1'),secrets.token_hex(12))[0]==201,'Broker outage rolled back transfer')
+                    check(len(api(args.notification_url,'/api/notifications',alice[0])[1])==1,'Notification appeared without broker delivery')
+                finally:
+                    subprocess.run(platform+['up','-d','--no-build','--wait','kafka'],check=True,stdout=subprocess.DEVNULL)
+                wait(lambda:len(api(args.notification_url,'/api/notifications',alice[0])[1])==2,'Notification consumer did not recover after Kafka restart',60)
+                check(api(args.ledger_url,'/api/accounts/'+str(a['id']),alice[0])[1]['balance']==Decimal('86.6544'),'Outage transfer balance mismatch')
+                passed('Real Kafka stop/restart: committed transfer retained, Notification caught up, financial balance exact')
+
+
         check(api(args.user_url,'/api/users/'+str(alice[1])+'/disable',operator[0],{})[0]==200,'Disable request failed')
         wait(lambda:api(args.ledger_url,'/api/accounts',alice[0])[0]==403,'Disabled identity remained authorized in Ledger')
         check(api(args.user_url,'/api/auth/me',alice[0])[0]==403,'Disabled User remained active')
+        if args.notification_url:wait(lambda:api(args.notification_url,'/api/notifications',alice[0])[0]==403,'Notification did not enforce disabled identity')
         check(api(args.user_url,'/api/users/'+str(alice[1])+'/enable',operator[0],{})[0]==200,'Enable request failed')
         wait(lambda:api(args.ledger_url,'/api/accounts',alice[0])[0]==200,'Enabled projection did not recover')
+        if args.notification_url:wait(lambda:api(args.notification_url,'/api/notifications',alice[0])[0]==200,'Notification did not recover enabled identity')
         check(api(args.user_url,'/internal/identity/replay',operator[0],{})[0]==200,'Snapshot replay failed')
         user_snapshots=api(args.user_url,'/internal/identity/snapshots',operator[0])[1]
         def reconciled():

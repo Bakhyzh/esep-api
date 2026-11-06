@@ -71,3 +71,7 @@ Production hardening and full platform E2E are later master-prompt phases.
 CI adds User verification/configuration/secret scanning/image build; Ledger and
 monolith jobs remain. Exact Git publication and remote CI status are recorded by
 subsequent phase/final reports. Phase B proceeds only after Phase A validation.
+
+Published to origin/main as 0a8781de91f05f935d89d66cb65e1da2aa132c4b.
+Remote SHA was independently verified. [CI run 42218237669](https://github.com/Bakhyzh/esep-api/actions/runs/42218237669)
+completed successfully (monolith, Ledger and User jobs).

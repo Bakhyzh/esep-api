@@ -11,6 +11,9 @@ services:
       LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?required}
       LEDGER_DB_PASSWORD: ${LEDGER_DB_PASSWORD:?required}
       LEDGER_IDENTITY_DB_PASSWORD: ${LEDGER_IDENTITY_DB_PASSWORD:?required}
+      NOTIFICATION_MIGRATION_PASSWORD: ${NOTIFICATION_MIGRATION_PASSWORD:?required}
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?required}
+      NOTIFICATION_IDENTITY_DB_PASSWORD: ${NOTIFICATION_IDENTITY_DB_PASSWORD:?required}
     volumes:
       - platform-pgdata:/var/lib/postgresql/data
       - ./infrastructure/platform/postgres-init.sql:/docker-entrypoint-initdb.d/10-platform.sql:ro
@@ -85,6 +88,28 @@ services:
       kafka: {condition: service_healthy}
     networks: [default, identity]
     mem_limit: 448m
+  notification:
+    build: ./services/notification-service
+    environment:
+      NOTIFICATION_DB_URL: jdbc:postgresql://postgres:5432/notification_db
+      NOTIFICATION_DB_USERNAME: notification_runtime
+      NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?required}
+      NOTIFICATION_MIGRATION_USERNAME: notification_migrator
+      NOTIFICATION_MIGRATION_PASSWORD: ${NOTIFICATION_MIGRATION_PASSWORD:?required}
+      NOTIFICATION_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      NOTIFICATION_IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/notification_db
+      NOTIFICATION_IDENTITY_DB_USERNAME: notification_projector
+      NOTIFICATION_IDENTITY_DB_PASSWORD: ${NOTIFICATION_IDENTITY_DB_PASSWORD:?required}
+      OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
+    ports: ["127.0.0.1:18084:8084"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+    networks: [default, identity]
+    mem_limit: 384m
+
 volumes:
   platform-pgdata:
   platform-kafka:
