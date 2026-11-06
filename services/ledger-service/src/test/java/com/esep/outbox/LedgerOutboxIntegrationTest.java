@@ -39,7 +39,7 @@ class LedgerOutboxIntegrationTest extends IntegrationTest {
         // Publish earlier fixtures first: this test does not delete or truncate financial data.
         publisher(kafka).publishPending();
         var transfer=transfer();
-        String eventId=jdbc.queryForObject("SELECT event_id::text FROM outbox_events WHERE aggregate_id=?",String.class,transfer.response().id());
+        String eventId=jdbc.queryForObject("SELECT event_id::text FROM outbox_events WHERE aggregate_id=? AND aggregate_type='transaction' AND event_type='TRANSFER_COMPLETED'",String.class,transfer.response().id());
         try (var consumer=new KafkaConsumer<String,String>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,kafka.getProducerFactory().getConfigurationProperties().get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
                 ConsumerConfig.GROUP_ID_CONFIG,"ledger-check-"+UUID.randomUUID(),
@@ -68,7 +68,7 @@ class LedgerOutboxIntegrationTest extends IntegrationTest {
         publisher(kafka).publishPending();
         var transfer=transfer();
         long txId=transfer.response().id();
-        String eventId=jdbc.queryForObject("SELECT event_id::text FROM outbox_events WHERE aggregate_id=?",String.class,txId);
+        String eventId=jdbc.queryForObject("SELECT event_id::text FROM outbox_events WHERE aggregate_id=? AND aggregate_type='transaction' AND event_type='TRANSFER_COMPLETED'",String.class,txId);
         var config=new HashMap<>(kafka.getProducerFactory().getConfigurationProperties());
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,"127.0.0.1:1");
         config.put(ProducerConfig.MAX_BLOCK_MS_CONFIG,500);
@@ -78,13 +78,13 @@ class LedgerOutboxIntegrationTest extends IntegrationTest {
         var unavailable=new KafkaTemplate<String,String>(factory);
         try {
             publisher(unavailable).publishPending();
-            assertThat(jdbc.queryForObject("SELECT attempts FROM outbox_events WHERE aggregate_id=?",Integer.class,txId)).isEqualTo(1);
-            assertThat(jdbc.queryForObject("SELECT published_at IS NULL FROM outbox_events WHERE aggregate_id=?",Boolean.class,txId)).isTrue();
+            assertThat(jdbc.queryForObject("SELECT attempts FROM outbox_events WHERE aggregate_id=? AND aggregate_type='transaction' AND event_type='TRANSFER_COMPLETED'",Integer.class,txId)).isEqualTo(1);
+            assertThat(jdbc.queryForObject("SELECT published_at IS NULL FROM outbox_events WHERE aggregate_id=? AND aggregate_type='transaction' AND event_type='TRANSFER_COMPLETED'",Boolean.class,txId)).isTrue();
             assertThat(jdbc.queryForObject("SELECT count(*) FROM transactions WHERE id=? AND status='COMPLETED'",Long.class,txId)).isEqualTo(1);
         } finally { factory.destroy(); }
         publisher(kafka).publishPending();
-        assertThat(jdbc.queryForObject("SELECT event_id::text FROM outbox_events WHERE aggregate_id=?",String.class,txId)).isEqualTo(eventId);
-        assertThat(jdbc.queryForObject("SELECT published_at IS NOT NULL FROM outbox_events WHERE aggregate_id=?",Boolean.class,txId)).isTrue();
+        assertThat(jdbc.queryForObject("SELECT event_id::text FROM outbox_events WHERE aggregate_id=? AND aggregate_type='transaction' AND event_type='TRANSFER_COMPLETED'",String.class,txId)).isEqualTo(eventId);
+        assertThat(jdbc.queryForObject("SELECT published_at IS NOT NULL FROM outbox_events WHERE aggregate_id=? AND aggregate_type='transaction' AND event_type='TRANSFER_COMPLETED'",Boolean.class,txId)).isTrue();
     }
     OutboxPublisher publisher(KafkaTemplate<String,String> broker) {
         return new OutboxPublisher(outbox,broker,new OutboxProperties(properties.topic(),Duration.ofSeconds(1),1000,Duration.ofSeconds(2),true),tx);
@@ -95,6 +95,7 @@ class LedgerOutboxIntegrationTest extends IntegrationTest {
         var from=accounts.save(new Account(a,Currency.getInstance("KZT")));
         var to=accounts.save(new Account(b,Currency.getInstance("KZT")));
         money.deposit(new CurrentUser(a.getId(),Role.ADMIN),UUID.randomUUID().toString(),new DepositRequest(from.getId(),new BigDecimal("100")));
+        publisher(kafka).publishPending();
         return money.transfer(new CurrentUser(a.getId(),Role.USER),UUID.randomUUID().toString(),new TransferRequest(from.getId(),to.getId(),new BigDecimal("10.1250")));
     }
 }

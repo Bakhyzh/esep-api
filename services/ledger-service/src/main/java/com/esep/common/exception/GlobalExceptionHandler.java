@@ -48,6 +48,11 @@ import java.util.List;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+    @ExceptionHandler(com.esep.facts.WriteFence.FencedException.class)
+    public ResponseEntity<ProblemDetail> handleFence(com.esep.facts.WriteFence.FencedException ex){
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(problem(HttpStatus.SERVICE_UNAVAILABLE,"Maintenance",ex.getMessage(),ErrorCode.CONFLICT));
+    }
+
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ProblemDetail handleNotFound(ResourceNotFoundException ex) {

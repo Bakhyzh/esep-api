@@ -17,6 +17,7 @@ public class TransferEventWriter {
 
     private final OutboxRepository outboxRepository;
     private final JsonMapper jsonMapper;
+    private final com.esep.facts.LedgerFactWriter facts;
 
     // MANDATORY: fail loudly if someone calls it outside a transaction - the event would be orphaned
     @Transactional(propagation = Propagation.MANDATORY)
@@ -35,6 +36,9 @@ public class TransferEventWriter {
                 // Key = sender account for partition affinity. Publication is at-least-once.
                 String.valueOf(from.getId()),
                 jsonMapper.writeValueAsString(event));
+        facts.posted(tx.getId());
         return event;
     }
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void posted(LedgerTransaction tx){facts.posted(tx.getId());}
 }

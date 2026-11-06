@@ -17,10 +17,13 @@ public class OutboxRepository {
     /** Must be called inside the business transaction: that is the whole point of the outbox. */
     public void append(UUID eventId, String aggregateType, long aggregateId, String eventType,
                        String messageKey, String payloadJson) {
+        append(eventId,aggregateType,aggregateId,eventType,messageKey,payloadJson,null);
+    }
+    public void append(UUID eventId,String aggregateType,long aggregateId,String eventType,String messageKey,String payloadJson,String targetTopic) {
         jdbc.update("""
-                INSERT INTO outbox_events (event_id, aggregate_type, aggregate_id, event_type, message_key, payload)
-                VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb))
-                """, eventId, aggregateType, aggregateId, eventType, messageKey, payloadJson);
+                INSERT INTO outbox_events (event_id, aggregate_type, aggregate_id, event_type, message_key, payload, target_topic)
+                VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb), ?)
+                """, eventId, aggregateType, aggregateId, eventType, messageKey, payloadJson, targetTopic);
     }
 
     /**
@@ -29,7 +32,7 @@ public class OutboxRepository {
      */
     public List<OutboxEvent> lockNextBatch(int limit) {
         return jdbc.query("""
-                SELECT id, event_id, event_type, message_key, payload::text AS payload
+                SELECT id, event_id, event_type, message_key, payload::text AS payload, target_topic
                 FROM outbox_events
                 WHERE published_at IS NULL
                 ORDER BY id
@@ -40,7 +43,7 @@ public class OutboxRepository {
                 rs.getObject("event_id", UUID.class),
                 rs.getString("event_type"),
                 rs.getString("message_key"),
-                rs.getString("payload")), limit);
+                rs.getString("payload"),rs.getString("target_topic")), limit);
     }
 
     public void markPublished(List<Long> ids) {
@@ -53,6 +56,7 @@ public class OutboxRepository {
                 error, id);
     }
 
-    public record OutboxEvent(long id, UUID eventId, String eventType, String messageKey, String payload) {
+    public record OutboxEvent(long id, UUID eventId, String eventType, String messageKey, String payload,String targetTopic) {
+        public OutboxEvent(long id,UUID eventId,String eventType,String messageKey,String payload){this(id,eventId,eventType,messageKey,payload,null);}
     }
 }

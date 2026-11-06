@@ -14,6 +14,9 @@ services:
       NOTIFICATION_MIGRATION_PASSWORD: ${NOTIFICATION_MIGRATION_PASSWORD:?required}
       NOTIFICATION_DB_PASSWORD: ${NOTIFICATION_DB_PASSWORD:?required}
       NOTIFICATION_IDENTITY_DB_PASSWORD: ${NOTIFICATION_IDENTITY_DB_PASSWORD:?required}
+      ANALYTICS_MIGRATION_PASSWORD: ${ANALYTICS_MIGRATION_PASSWORD:?required}
+      ANALYTICS_DB_PASSWORD: ${ANALYTICS_DB_PASSWORD:?required}
+      ANALYTICS_IDENTITY_DB_PASSWORD: ${ANALYTICS_IDENTITY_DB_PASSWORD:?required}
     volumes:
       - platform-pgdata:/var/lib/postgresql/data
       - ./infrastructure/platform/postgres-init.sql:/docker-entrypoint-initdb.d/10-platform.sql:ro
@@ -109,6 +112,42 @@ services:
       kafka: {condition: service_healthy}
     networks: [default, identity]
     mem_limit: 384m
+  analytics:
+    build: ./services/analytics-service
+    environment:
+      ANALYTICS_DB_URL: jdbc:postgresql://postgres:5432/analytics_db
+      ANALYTICS_DB_USERNAME: analytics_runtime
+      ANALYTICS_DB_PASSWORD: ${ANALYTICS_DB_PASSWORD:?required}
+      ANALYTICS_MIGRATION_USERNAME: analytics_migrator
+      ANALYTICS_MIGRATION_PASSWORD: ${ANALYTICS_MIGRATION_PASSWORD:?required}
+      ANALYTICS_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      ANALYTICS_IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/analytics_db
+      ANALYTICS_IDENTITY_DB_USERNAME: analytics_projector
+      ANALYTICS_IDENTITY_DB_PASSWORD: ${ANALYTICS_IDENTITY_DB_PASSWORD:?required}
+      OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      ANALYTICS_LEDGER_BASE_URL: http://ledger:8082
+      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:+ExitOnOutOfMemoryError
+    ports: ["127.0.0.1:18085:8085"]
+    depends_on:
+      redis: {condition: service_healthy}
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+    networks: [default, identity]
+    mem_limit: 384m
+  redis:
+    image: redis:7-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+    command: [sh, -c, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 64mb --maxmemory-policy allkeys-lru']
+    healthcheck:
+      test: [CMD-SHELL, 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 96m
 
 volumes:
   platform-pgdata:

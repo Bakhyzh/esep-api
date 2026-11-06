@@ -6,8 +6,8 @@ an assertion that the entire platform is complete or production-ready.
 | Phase | Current verified state |
 |---|---|
 | A User | Published main 0a8781de91f05f935d89d66cb65e1da2aa132c4b; CI 42218237669 success; User 4 tests, Ledger 87, monolith 248 with 1 opt-in skip; actual Keycloak/identity/financial/replay flow passed |
-| B Notification | Implemented locally; 5 real integration tests; real Ledger event/read/unread/owner and Kafka outage/recovery E2E passed; publication/remote CI pending |
-| C Analytics | Next: independent exact-decimal read model, identity projection, Redis generation cache, posting/lifecycle version contracts, controlled backfill/reconciliation |
+| B Notification | Published main 82997fde4280b8de3b649d6276808eb13e3dd532; CI 42221287503 success; 5 real integration tests and actual Kafka outage/recovery E2E passed |
+| C Analytics | Implemented locally; Ledger 89 and Analytics 10 tests passed; exact read model, Redis durable generations, full posting/account facts, fenced historical API export; real Keycloak/Kafka outage/historical backfill/reconciliation/invariants passed; publication/remote CI pending |
 | D Gateway | Not implemented yet; verify actual Boot/Cloud compatibility; reactive JWT/CORS/correlation/rate-limit/timeouts; update real esep-web and real browser E2E |
 | E Edge/scaling | Not implemented yet; two Gateways, Nginx, health/failure tests; multiple Ledger instances must share only their dedicated authority DB |
 | F DBA/DR | Not implemented yet; diagnostics, separate ops roles, encrypted backup/retention/isolated restore, PITR lab and runbooks |

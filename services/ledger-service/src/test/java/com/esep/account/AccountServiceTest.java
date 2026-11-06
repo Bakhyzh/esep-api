@@ -43,6 +43,9 @@ class AccountServiceTest {
     @Mock
     private LedgerPrincipalRepository userRepository;
 
+    @Mock private com.esep.facts.WriteFence writeFence;
+    @Mock private com.esep.facts.LedgerFactWriter facts;
+
     @InjectMocks
     private AccountService accountService;
 
@@ -52,7 +55,7 @@ class AccountServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(accountRepository.findSystemAccountId(KZT)).thenReturn(Optional.of(100L));
         when(accountRepository.existsByUser_IdAndCurrencyAndStatus(1L, KZT, AccountStatus.ACTIVE)).thenReturn(false);
-        when(accountRepository.saveAndFlush(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.saveAndFlush(any(Account.class))).thenAnswer(inv -> {Account a=inv.getArgument(0); ReflectionTestUtils.setField(a,"id",10L); return a;});
 
         AccountResponse response = accountService.create(ME, new CreateAccountRequest("KZT"));
 
@@ -117,6 +120,7 @@ class AccountServiceTest {
     @Test
     void close_zeroBalance_closesAccount() {
         Account account = new Account(user(1L), KZT);
+        ReflectionTestUtils.setField(account,"id",10L);
         when(accountRepository.findById(10L)).thenReturn(Optional.of(account));
 
         AccountResponse response = accountService.close(ME, 10L);

@@ -25,9 +25,12 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final LedgerPrincipalRepository userRepository;
+    private final com.esep.facts.WriteFence writeFence;
+    private final com.esep.facts.LedgerFactWriter facts;
 
     @Transactional
     public AccountResponse create(CurrentUser currentUser, CreateAccountRequest request) {
+        writeFence.requireWritable();
         // The approved principal must exist locally; no remote identity calls inside this transaction.
         LedgerPrincipal user = userRepository.findById(currentUser.id())
                 .orElseThrow(() -> new ResourceNotFoundException("User", currentUser.id()));
@@ -46,6 +49,7 @@ public class AccountService {
         try {
             // saveAndFlush: send INSERT now, so a unique-index violation is thrown here and not at commit
             Account account = accountRepository.saveAndFlush(new Account(user, currency));
+            facts.accountChanged(account.getId());
             return AccountResponse.from(account);
         } catch (DataIntegrityViolationException e) {
             // race: two parallel requests both passed the exists-check, the DB unique index stopped the second one
@@ -70,8 +74,10 @@ public class AccountService {
 
     @Transactional
     public AccountResponse close(CurrentUser currentUser, Long id) {
+        writeFence.requireWritable();
         Account account = findAccessibleAccount(currentUser, id);
         account.close();
+        facts.accountChanged(account.getId());
         // no save() needed: the entity is managed, Hibernate flushes the change on commit (dirty checking)
         return AccountResponse.from(account);
     }

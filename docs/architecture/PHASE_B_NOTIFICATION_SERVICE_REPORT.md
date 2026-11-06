@@ -57,3 +57,6 @@ suspension is eventually consistent with Kafka. Local broker isolation is not
 production ACL/TLS. Retention/replay operational controls and observability are
 completed in later master-prompt phases. Exact publication/CI details appear in
 later phase/final reports; no production readiness is asserted from local passes.
+
+Publication: main `82997fde4280b8de3b649d6276808eb13e3dd532`, remote
+GitHub Actions run `42221287503` completed successfully. No production deployment.

@@ -60,6 +60,8 @@ class TransactionProcessorTest {
     @Mock
     private ApplicationEventPublisher applicationEvents;
 
+    @Mock private com.esep.facts.WriteFence writeFence;
+
     @InjectMocks
     private TransactionProcessor processor;
 

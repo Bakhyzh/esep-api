@@ -41,12 +41,13 @@ def main():
     parser.add_argument('--user-url',default='http://localhost:18083')
     parser.add_argument('--ledger-url',default='http://localhost:18082')
     parser.add_argument('--notification-url')
+    parser.add_argument('--analytics-url')
     parser.add_argument('--broker-recovery',action='store_true')
     args=parser.parse_args()
-    for base in [args.user_url,args.ledger_url,args.notification_url]:
+    for base in [args.user_url,args.ledger_url,args.notification_url,args.analytics_url]:
         if base is not None:
             parsed=urllib.parse.urlsplit(base)
-            if parsed.scheme!='http' or parsed.hostname not in ('localhost','127.0.0.1') or parsed.port not in (18082,18083,18084):
+            if parsed.scheme!='http' or parsed.hostname not in ('localhost','127.0.0.1') or parsed.port not in (18082,18083,18084,18085):
                 raise RuntimeError('E2E only accepts isolated platform loopback ports')
     helper=runpy.run_path(str(ROOT/'infrastructure/keycloak/validate.py'))
     dc=helper['DC'];dc[dc.index('--env-file')+1]=str(args.identity_dir.resolve()/'.env')
@@ -108,6 +109,29 @@ def main():
                 check(api(args.ledger_url,'/api/accounts/'+str(a['id']),alice[0])[1]['balance']==Decimal('86.6544'),'Outage transfer balance mismatch')
                 passed('Real Kafka stop/restart: committed transfer retained, Notification caught up, financial balance exact')
 
+
+        if args.analytics_url:
+            report='/api/analytics/spending?currency=KZT'
+            expected=Decimal('13.3456' if args.broker_recovery else '12.3456')
+            def reported():
+                status,points=api(args.analytics_url,report,alice[0])
+                return status==200 and sum((p['total'] for p in points),Decimal(0))==expected
+            wait(reported,'Posting facts did not reach Analytics accurately',60)
+            check(api(args.analytics_url,report+'&userId='+str(alice[1]),bob[0])[0]==403,'Foreign analytics disclosed')
+            status,state=api(args.ledger_url,'/internal/ledger/write-fence',operator[0],dict(enabled=False))
+            check(status==200,'Explicit local write fence failed');epoch=state['epoch']
+            try:
+                check(api(args.ledger_url,'/api/transfers',alice[0],transfer,secrets.token_hex(12))[0]==503,'Fenced writer accepted transfer')
+                status,result=api(args.analytics_url,'/internal/analytics/backfill?epoch='+str(epoch),operator[0],{})
+                check(status==200 and result['transactions']>0,'Controlled historical backfill failed')
+                source=api(args.ledger_url,'/internal/ledger/reconciliation?epoch='+str(epoch),operator[0])[1]
+                actual=api(args.analytics_url,'/internal/analytics/reconciliation',operator[0])[1]
+                check(source==actual,'Per-account historical projection reconciliation failed')
+                check(api(args.analytics_url,'/internal/analytics/backfill?epoch='+str(epoch),operator[0],{})[0]==200,'Repeat backfill failed')
+                check(api(args.analytics_url,'/internal/analytics/reconciliation',operator[0])[1]==source,'Repeated backfill duplicated facts')
+            finally:
+                check(api(args.ledger_url,'/internal/ledger/write-fence',operator[0],dict(enabled=True))[0]==200,'Local writes could not resume')
+            passed('Actual postings -> Analytics exact report; foreign access denied; fenced historical backfill/replay and all-account reconciliation passed')
 
         check(api(args.user_url,'/api/users/'+str(alice[1])+'/disable',operator[0],{})[0]==200,'Disable request failed')
         wait(lambda:api(args.ledger_url,'/api/accounts',alice[0])[0]==403,'Disabled identity remained authorized in Ledger')

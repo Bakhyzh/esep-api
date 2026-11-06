@@ -39,3 +39,18 @@ GRANT CONNECT ON DATABASE notification_db TO notification_runtime,notification_p
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO notification_runtime,notification_projector;
 ALTER DEFAULT PRIVILEGES FOR ROLE notification_migrator IN SCHEMA public GRANT SELECT ON TABLES TO notification_runtime;
+
+\connect postgres
+\getenv analytics_migration_password ANALYTICS_MIGRATION_PASSWORD
+\getenv analytics_runtime_password ANALYTICS_DB_PASSWORD
+\getenv analytics_projection_password ANALYTICS_IDENTITY_DB_PASSWORD
+SELECT format('CREATE ROLE analytics_migrator LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L',:'analytics_migration_password') WHERE NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='analytics_migrator') \gexec
+SELECT format('CREATE ROLE analytics_runtime LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L',:'analytics_runtime_password') WHERE NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='analytics_runtime') \gexec
+SELECT format('CREATE ROLE analytics_projector LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD %L',:'analytics_projection_password') WHERE NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='analytics_projector') \gexec
+SELECT 'CREATE DATABASE analytics_db OWNER analytics_migrator' WHERE NOT EXISTS(SELECT 1 FROM pg_database WHERE datname='analytics_db') \gexec
+REVOKE CONNECT ON DATABASE analytics_db FROM PUBLIC;
+GRANT CONNECT ON DATABASE analytics_db TO analytics_runtime,analytics_projector;
+\connect analytics_db
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA public TO analytics_runtime,analytics_projector;
+ALTER DEFAULT PRIVILEGES FOR ROLE analytics_migrator IN SCHEMA public GRANT SELECT ON TABLES TO analytics_runtime;

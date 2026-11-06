@@ -27,6 +27,8 @@ class TransferEventWriterTest {
     @Mock
     private OutboxRepository outboxRepository;
 
+    @Mock private com.esep.facts.LedgerFactWriter facts;
+
     @Test
     void eventDescribesTheTransferAndIsKeyedBySenderAccount() {
         Account from = account(10L, user(1L), "500.0000");
@@ -34,7 +36,7 @@ class TransferEventWriterTest {
         LedgerTransaction tx = LedgerTransaction.transfer(user(1L), "key", "hash", from, to, new BigDecimal("125.5"));
         ReflectionTestUtils.setField(tx, "id", 77L);
 
-        TransferCompletedEvent event = new TransferEventWriter(outboxRepository, jsonMapper).transferCompleted(tx, from, to);
+        TransferCompletedEvent event = new TransferEventWriter(outboxRepository, jsonMapper,facts).transferCompleted(tx, from, to);
 
         assertThat(event.transactionId()).isEqualTo(77L);
         assertThat(event.fromAccountId()).isEqualTo(10L);

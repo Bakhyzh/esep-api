@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "$id": "urn:esep:events:ledger-transaction-posted:v1",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "eventType": {
+      "const": "LEDGER_TRANSACTION_POSTED"
+    },
+    "producer": {
+      "const": "ledger-service"
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "transactionId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "transactionType": {
+      "enum": [
+        "TRANSFER",
+        "DEPOSIT",
+        "WITHDRAWAL"
+      ]
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "postings": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "entryId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "accountId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "ownerUserId": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "accountType": {
+            "enum": [
+              "USER",
+              "SYSTEM"
+            ]
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "direction": {
+            "enum": [
+              "DEBIT",
+              "CREDIT"
+            ]
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^[0-9]{1,15}\\.[0-9]{4}$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "entryId",
+          "accountId",
+          "ownerUserId",
+          "accountType",
+          "currency",
+          "direction",
+          "amount",
+          "createdAt"
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventType",
+    "producer",
+    "eventId",
+    "transactionId",
+    "transactionType",
+    "occurredAt",
+    "postings"
+  ]
+}

@@ -75,7 +75,7 @@ public class OutboxPublisher {
 
     private void send(OutboxEvent event) throws Exception {
         ProducerRecord<String, String> record =
-                new ProducerRecord<>(properties.topic(), event.messageKey(), event.payload());
+                new ProducerRecord<>(event.targetTopic()==null?properties.topic():event.targetTopic(), event.messageKey(), event.payload());
         record.headers().add(EVENT_ID_HEADER, event.eventId().toString().getBytes(StandardCharsets.UTF_8));
         record.headers().add(EVENT_TYPE_HEADER, event.eventType().getBytes(StandardCharsets.UTF_8));
         // wait for the broker ack (acks=all): only then is it safe to mark the row as published

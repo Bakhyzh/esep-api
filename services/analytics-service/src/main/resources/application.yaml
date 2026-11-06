@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: analytics-service
+  datasource:
+    url: ${ANALYTICS_DB_URL}
+    username: ${ANALYTICS_DB_USERNAME}
+    password: ${ANALYTICS_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 5000
+  flyway:
+    locations: classpath:db/analytics
+    user: ${ANALYTICS_MIGRATION_USERNAME:${ANALYTICS_DB_USERNAME}}
+    password: ${ANALYTICS_MIGRATION_PASSWORD:${ANALYTICS_DB_PASSWORD}}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 200ms
+  kafka:
+    bootstrap-servers: ${ANALYTICS_KAFKA_BOOTSTRAP_SERVERS}
+    admin:
+      fail-fast: false
+    consumer:
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: record
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.block.ms: 1000
+        request.timeout.ms: 1000
+        delivery.timeout.ms: 3000
+server:
+  port: ${SERVER_PORT:8085}
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health:
+    probes.enabled: true
+    show-details: never
+    group.readiness.include: readinessState,db
+esep:
+  cors:
+    allowed-origins: ${ANALYTICS_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    max-age: 1h
+  security.keycloak:
+    issuer-uri: ${OIDC_ISSUER_URI}
+    jwk-set-uri: ${OIDC_JWK_SET_URI}
+  identity:
+    enabled: true
+    group: esep-analytics-identities-v1
+    jdbc-url: ${ANALYTICS_IDENTITY_DB_URL:}
+    username: ${ANALYTICS_IDENTITY_DB_USERNAME:}
+    password: ${ANALYTICS_IDENTITY_DB_PASSWORD:}
+  analytics:
+    cache:
+      ttl: 5m
+    ledger-base-url: ${ANALYTICS_LEDGER_BASE_URL:http://ledger:8082}

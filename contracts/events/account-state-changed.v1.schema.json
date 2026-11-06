@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "$id": "urn:esep:events:account-state-changed:v1",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "eventType": {
+      "const": "ACCOUNT_STATE_CHANGED"
+    },
+    "producer": {
+      "const": "ledger-service"
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "accountId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "ownerUserId": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "accountType": {
+      "enum": [
+        "USER",
+        "SYSTEM"
+      ]
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "status": {
+      "enum": [
+        "ACTIVE",
+        "CLOSED"
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "closedAt": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventType",
+    "producer",
+    "eventId",
+    "accountId",
+    "ownerUserId",
+    "accountType",
+    "currency",
+    "status",
+    "version",
+    "createdAt",
+    "closedAt"
+  ]
+}

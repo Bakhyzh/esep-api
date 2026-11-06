@@ -38,10 +38,12 @@ public class TransactionProcessor {
     private final LedgerPrincipalRepository userRepository;
     private final TransferEventWriter transferEventWriter;
     private final ApplicationEventPublisher applicationEvents;
+    private final com.esep.facts.WriteFence writeFence;
 
     /** Money can be sent only from your own account (an admin too), to any account. */
     @Transactional
     public TransactionResult transfer(CurrentUser currentUser, String idempotencyKey, TransferRequest request) {
+        writeFence.requireWritable();
         String requestHash = request.fingerprint();
         if (request.fromAccountId().equals(request.toAccountId())) {
             throw new BusinessRuleException(ErrorCode.SAME_ACCOUNT_TRANSFER, "Cannot transfer to the same account");
@@ -87,6 +89,7 @@ public class TransactionProcessor {
     /** ADMIN only, enforced by the URL rule in SecurityConfig. */
     @Transactional
     public TransactionResult deposit(CurrentUser currentUser, String idempotencyKey, DepositRequest request) {
+        writeFence.requireWritable();
         String requestHash = request.fingerprint();
         // currency never changes, so reading it without a lock is safe
         var currency = accountRepository.findCurrencyById(request.accountId())
@@ -107,7 +110,9 @@ public class TransactionProcessor {
         }
         LedgerTransaction tx = LedgerTransaction.deposit(
                 creator(currentUser), idempotencyKey, requestHash, locked.get(fundingId), target, request.amount());
-        return TransactionResult.created(TransactionResponse.from(transactionRepository.save(tx)));
+        var persisted=transactionRepository.save(tx);
+        transferEventWriter.posted(persisted);
+        return TransactionResult.created(TransactionResponse.from(persisted));
     }
 
     /** Used by {@link TransactionService} after a unique-key race, in a fresh transaction. */

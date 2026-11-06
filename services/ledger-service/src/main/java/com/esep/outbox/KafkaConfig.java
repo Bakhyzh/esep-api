@@ -18,6 +18,10 @@ public class KafkaConfig {
         };
     }
     @Bean
+    org.springframework.kafka.core.KafkaAdmin.NewTopics factTopics(){return new org.springframework.kafka.core.KafkaAdmin.NewTopics(
+        TopicBuilder.name("esep.ledger.postings.v1").partitions(3).replicas(1).build(),
+        TopicBuilder.name("esep.ledger.accounts.v1").partitions(3).replicas(1).build());}
+    @Bean
     NewTopic transfersTopic(OutboxProperties p) {
         return TopicBuilder.name(p.topic()).partitions(3).replicas(1).build();
     }
