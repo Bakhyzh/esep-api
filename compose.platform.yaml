@@ -148,6 +148,28 @@ services:
       timeout: 3s
       retries: 20
     mem_limit: 96m
+  gateway:
+    build: ./services/api-gateway
+    environment:
+      USER_BASE_URL: http://user:8083
+      LEDGER_BASE_URL: http://ledger:8082
+      ANALYTICS_BASE_URL: http://analytics:8085
+      NOTIFICATION_BASE_URL: http://notification:8084
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
+      OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
+      OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
+      GATEWAY_INSTANCE: gateway-1
+      JAVA_OPTS: -XX:MaxRAMPercentage=55 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
+    ports: ["127.0.0.1:18080:8080"]
+    depends_on:
+      user: {condition: service_healthy}
+      ledger: {condition: service_healthy}
+      notification: {condition: service_healthy}
+      analytics: {condition: service_healthy}
+      redis: {condition: service_healthy}
+    networks: [default, identity]
+    mem_limit: 320m
 
 volumes:
   platform-pgdata:

@@ -134,7 +134,8 @@ On Apple M1/8GB host, Docker Desktop 4GB VM, Java21, 2026-11-06:
 - Synthetic query-plan sample: 24 rows selected from20,000 postings, index-only
   scan, execution0.104ms on this local run. No production performance inference.
 
-Remote feature/main publication and GitHub CI are pending at report creation.
+Published main `6c1325fb6a38f4fda04a1fd6785a0d7a02e048a7`; GitHub Actions
+run `42224430846` completed with all five jobs successful. Remote main SHA verified.
 Later master phases D–I,
 frontend integration through Gateway, production broker ACL/TLS, verified disaster
 recovery and full observability/load tests are **not** claimed complete here.

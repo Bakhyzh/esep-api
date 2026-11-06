@@ -1,0 +1,56 @@
+spring:
+  application.name: api-gateway
+  data.redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    timeout: 500ms
+  cloud.gateway.server.webflux:
+    routes:
+      - id: user
+        uri: ${esep.gateway.user-uri}
+        predicates: ["Path=/api/auth/me,/api/users/**"]
+      - id: ledger
+        uri: ${esep.gateway.ledger-uri}
+        predicates: ["Path=/api/accounts/**,/api/transfers,/api/deposits,/api/transactions/**"]
+      - id: analytics
+        uri: ${esep.gateway.analytics-uri}
+        predicates: [Path=/api/analytics/**]
+      - id: notification
+        uri: ${esep.gateway.notification-uri}
+        predicates: [Path=/api/notifications/**]
+    httpclient:
+      connect-timeout: 2000
+      response-timeout: 10s
+      pool.max-connections: 100
+    forwarded.enabled: false
+    x-forwarded.enabled: false
+    metrics.enabled: true
+    default-filters:
+      - name: RequestSize
+        args:
+          maxSize: 64KB
+      - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+  lifecycle.timeout-per-shutdown-phase: 20s
+server:
+  port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: none
+management:
+  endpoints.web.exposure.include: health,info
+  endpoint.health:
+    probes.enabled: true
+    show-details: never
+    group.readiness.include: readinessState
+esep.gateway:
+  user-uri: ${USER_BASE_URL:http://user:8083}
+  ledger-uri: ${LEDGER_BASE_URL:http://ledger:8082}
+  analytics-uri: ${ANALYTICS_BASE_URL:http://analytics:8085}
+  notification-uri: ${NOTIFICATION_BASE_URL:http://notification:8084}
+  cors-origins: ${GATEWAY_CORS_ORIGINS:http://localhost:5173}
+  issuer-uri: ${OIDC_ISSUER_URI}
+  jwk-set-uri: ${OIDC_JWK_SET_URI}
+  read-limit: ${GATEWAY_READ_LIMIT:600}
+  write-limit: ${GATEWAY_WRITE_LIMIT:120}
+  window-seconds: ${GATEWAY_WINDOW_SECONDS:60}
+  instance: ${GATEWAY_INSTANCE:gateway}
