@@ -219,3 +219,38 @@ fast-forward integration into main; main push and remote SHA will be verified.
 Exact implementation/publication SHAs, scan results and remote CI links are recorded
 in the publication follow-up rather than embedding a self-referential commit SHA.
 No force push/reset, volume deletion, existing data overwrite or public deployment.
+
+### Confirmed acceptance and publication
+
+**Phase 3.1 local extraction acceptance passed.** Implementation commit:
+`6587043164df3d8cae9b3f6c5554e96e97ba35c1`.
+
+[GitHub CI run 42213224920](https://github.com/Bakhyzh/esep-api/actions/runs/42213224920)
+completed with conclusion **success** for that exact SHA. Both ledger and monolith
+build jobs passed, including Maven integration/concurrency/Flyway/security/Kafka
+tests, configuration validation and both Docker builds. Ledger's committed-source
+secret scan also passed using the pinned Gitleaks image. This verification
+completed before main integration; no partial or failing extraction was merged.
+
+The existing clean main worktree was fast-forwarded to the implementation commit.
+A normal push to origin/main succeeded; independent `git ls-remote origin
+refs/heads/main` returned exactly
+`6587043164df3d8cae9b3f6c5554e96e97ba35c1` before this documentation-only
+publication follow-up. Main's normal CI/image pipeline is separate from the
+already successful exact-implementation CI run; SSH production deploy remains
+explicit manual opt-in. No public deployment was requested or performed.
+
+Local staged-diff Gitleaks 8.30.1 and the exact CI container scanner both reported
+**no leaks found** for the final 102-file implementation changeset. One prose-only
+false positive in the full-file scan was resolved by clarifying report wording;
+no scanner rule was disabled or allowlist added. Whitespace and local Markdown
+links passed. .env and target artifacts were ignored and absent from staging;
+the local .env has mode 0600. Ledger Docker logs and inspected Maven/live logs
+contained zero complete JWT-shaped tokens. The original monolith source/test/
+V1–V8 diff is empty; original unrelated work remains unchanged and untracked.
+
+The local Ledger/PostgreSQL/Kafka services remain running and healthy, with
+readiness UP on loopback 8082. Existing identity and Phase 2.3 stacks remain
+separate. Human test identities were removed; synthetic financial/mapping and
+restore-check data remain for audit. Real financial/identity migration, routing
+and production hardening still require the runbook gates and explicit approval.
