@@ -202,3 +202,24 @@ in the publication follow-up). Backend implementation and final push confirmatio
 are recorded in a subsequent documentation-only publication commit, avoiding a
 self-referential commit SHA. Both integrations use fast-forward/normal push only;
 no force push, reset, destructive cleanup or branch-protection bypass.
+
+### Confirmed publication record
+
+- Backend implementation: `fbc30cab32e0ce9d453be32556c1d4b1fe78e09f`.
+  Integrated into the existing clean main worktree by `git merge --ff-only`, normal
+  push to origin/main succeeded. Independent `git ls-remote origin refs/heads/main`
+  returned exactly that SHA before this documentation-only follow-up.
+- Frontend: `a135211a977d6e3c0a66a2849b6bb52600e3b8e0` in Bakhyzh/esep-web.
+  Normal fast-forward main integration/push succeeded; independent ls-remote
+  returned exactly that SHA. Original frontend worktree/branch was not changed.
+- Gitleaks 8.30.1 scanned both complete staged changesets with redacted output:
+  **no leaks found**. Git staged diff whitespace checks passed in both repositories.
+  Additional allowlisted log inspection found no complete JWT-shaped tokens in
+  API, live/cutover, rollback or Maven verification logs. No .env or runtime test
+  artifacts were staged. V1–V8, db-lab and the seven original audit documents were
+  excluded from changes. No force push, hard reset or cleanup was used.
+- Final local Compose services app/postgres/redis/kafka were running and healthy;
+  Keycloak remained on the original persistent identity stack. Temporary rollback
+  JVM was stopped. Frontend local Vite server remains available on localhost:5173.
+- Backend production SSH and frontend Pages deploy jobs require manual opt-in;
+  these pushes only trigger validation/build work, not a public deployment.
