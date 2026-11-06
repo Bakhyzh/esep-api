@@ -2,8 +2,11 @@ name: esep-platform-local
 services:
   postgres:
     image: postgres:17-alpine
-    command: [postgres, -c, shared_preload_libraries=pg_stat_statements, -c, max_connections=80, -c, log_min_duration_statement=500, -c, log_statement=none]
+    command: [postgres, -c, shared_preload_libraries=pg_stat_statements, -c, max_connections=80, -c, log_min_duration_statement=500, -c, log_statement=none, -c, log_parameter_max_length=0, -c, log_parameter_max_length_on_error=0, -c, log_error_verbosity=terse]
     environment:
+      PLATFORM_BACKUP_PASSWORD: ${PLATFORM_BACKUP_PASSWORD:?required}
+      PLATFORM_OPS_PASSWORD: ${PLATFORM_OPS_PASSWORD:?required}
+      PLATFORM_RESTORE_PASSWORD: ${PLATFORM_RESTORE_PASSWORD:?required}
       POSTGRES_USER: platform_bootstrap
       POSTGRES_PASSWORD: ${PLATFORM_DB_BOOTSTRAP_PASSWORD:?required}
       USER_MIGRATION_PASSWORD: ${USER_MIGRATION_PASSWORD:?required}
@@ -20,6 +23,7 @@ services:
     volumes:
       - platform-pgdata:/var/lib/postgresql/data
       - ./infrastructure/platform/postgres-init.sql:/docker-entrypoint-initdb.d/10-platform.sql:ro
+      - ./infrastructure/ops/roles.sql:/docker-entrypoint-initdb.d/20-ops.sql:ro
     healthcheck:
       test: [CMD-SHELL, "pg_isready -U platform_bootstrap -d user_db"]
       interval: 5s
@@ -265,6 +269,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    mem_limit: 64m
+  dba-toolbox:
+    profiles: [dba]
+    image: postgres:17.11-alpine@sha256:562a6e0a66b5136bc28bef5944bbc2ddddf8ea0058d4016b96cee63f2edaf143
+    entrypoint: [sleep]
+    command: [infinity]
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ledger_db
+      PGUSER: platform_ops
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
     mem_limit: 64m
 
 volumes:

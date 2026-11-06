@@ -100,6 +100,9 @@ jobs:
           ANALYTICS_IDENTITY_DB_PASSWORD: ci-placeholder-analytics-projector
           REDIS_PASSWORD: ci-placeholder-cache
           PLATFORM_FRONTEND_CONTEXT: ./frontend
+          PLATFORM_BACKUP_PASSWORD: ci-placeholder-backup
+          PLATFORM_OPS_PASSWORD: ci-placeholder-monitor
+          PLATFORM_RESTORE_PASSWORD: ci-placeholder-restore
         run: docker compose -f compose.platform.yaml config -q
       - name: User committed-source secret scan
         run: |
@@ -184,3 +187,28 @@ jobs:
           mkdir -p /tmp/edge-scan
           git archive HEAD infrastructure/edge infrastructure/platform/configure-edge-client.py tests/e2e/replica-failures.py docs/architecture/PHASE_E_EDGE_SCALING_REPORT.md | tar -x -C /tmp/edge-scan
           docker run --rm -v /tmp/edge-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
+
+  operations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: infrastructure/ops-tests/pom.xml
+      - name: Fresh PostgreSQL role boundaries, four Flyway histories, timeout rollback and connection budgets
+        run: ./mvnw -B -f infrastructure/ops-tests/pom.xml verify
+      - name: Install supported backup encryption tool
+        run: sudo apt-get update -qq && sudo apt-get install -y age
+      - name: Real encrypted artifact and retention security tests
+        run: python3 -m unittest discover -s infrastructure/ops -p 'test_*.py'
+      - name: Real isolated named-point WAL recovery and verified physical backup
+        run: python3 infrastructure/ops/pitr-lab.py
+      - name: Verify operator helper syntax and scan committed sources
+        run: |
+          python3 -m py_compile infrastructure/ops/*.py
+          mkdir -p /tmp/ops-scan
+          git archive HEAD infrastructure/ops infrastructure/ops-tests docs/runbooks/platform-operations.md docs/architecture/PHASE_F_RECOVERY_REPORT.md | tar -x -C /tmp/ops-scan
+          docker run --rm -v /tmp/ops-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner

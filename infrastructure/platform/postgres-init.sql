@@ -1,4 +1,7 @@
 \set ON_ERROR_STOP on
+SET log_min_duration_statement=-1;
+SET log_min_error_statement='PANIC';
+SET log_statement='none';
 \getenv user_migration_password USER_MIGRATION_PASSWORD
 \getenv user_runtime_password USER_DB_PASSWORD
 \getenv ledger_migration_password LEDGER_MIGRATION_PASSWORD
@@ -26,6 +29,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE ledger_migrator IN SCHEMA public GRANT SELECT 
 ALTER DEFAULT PRIVILEGES FOR ROLE ledger_migrator IN SCHEMA public GRANT USAGE,SELECT ON SEQUENCES TO ledger_runtime,ledger_projector;
 
 \connect postgres
+SET log_min_duration_statement=-1;
+SET log_min_error_statement='PANIC';
+SET log_statement='none';
 \getenv notification_migration_password NOTIFICATION_MIGRATION_PASSWORD
 \getenv notification_runtime_password NOTIFICATION_DB_PASSWORD
 \getenv notification_projection_password NOTIFICATION_IDENTITY_DB_PASSWORD
@@ -41,6 +47,9 @@ GRANT USAGE ON SCHEMA public TO notification_runtime,notification_projector;
 ALTER DEFAULT PRIVILEGES FOR ROLE notification_migrator IN SCHEMA public GRANT SELECT ON TABLES TO notification_runtime;
 
 \connect postgres
+SET log_min_duration_statement=-1;
+SET log_min_error_statement='PANIC';
+SET log_statement='none';
 \getenv analytics_migration_password ANALYTICS_MIGRATION_PASSWORD
 \getenv analytics_runtime_password ANALYTICS_DB_PASSWORD
 \getenv analytics_projection_password ANALYTICS_IDENTITY_DB_PASSWORD

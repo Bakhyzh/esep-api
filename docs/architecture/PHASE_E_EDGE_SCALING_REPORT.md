@@ -148,3 +148,8 @@ failover of a database. Active health detection has delay; in-flight requests ca
 fail. Production TLS/ACLs/secrets, backup/restore/PITR, observability and measured
 k6/resilience work remain phases F–I. No real financial data or existing db-lab
 was touched. Secret scan/publication/CI receipts are recorded after execution.
+
+Publication receipt: backend main `ece425a893a16c91bacc25c479bd984f5b51ff20`,
+CI `42239735085` all7 jobs success; frontend main
+`a70afab85289b299fe49f481fc909b999d25faf6`, CI `42239146949` success.
+Both remote main SHAs verified; no public deployment.

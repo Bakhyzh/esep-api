@@ -42,3 +42,8 @@ build/
 
 # Python operator and E2E helpers
 __pycache__/
+
+# Private operations artifacts and recovery keys
+.platform-secrets/
+.platform-backups/
+.platform-lab/
