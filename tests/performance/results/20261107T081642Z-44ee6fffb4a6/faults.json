@@ -1,0 +1,54 @@
+[
+  {
+    "fault": "gateway-and-ledger-replica-kills",
+    "result": "PASS",
+    "details": {
+      "observations": [
+        "Actual edge traffic reached two independent Gateways and two independent Ledger instances",
+        "Gateway killed during50 reads; observed HTTP statuses {200: 50}",
+        "Ledger killed during40 concurrent duplicate requests /8 keys; statuses {201: 8, 500: 3, 200: 29}; all8 settled exactly once, conservation0.0008 verified",
+        "Both replica pairs restored; authoritative PostgreSQL invariants passed after faults"
+      ]
+    },
+    "financial_invariants": "PASS",
+    "actual_kafka_reconciliation": "PASS"
+  },
+  {
+    "fault": "redis-outage",
+    "result": "PASS",
+    "details": {
+      "analytics_read_status": 200,
+      "write_status": 503,
+      "committed_rejected_requests": 0
+    },
+    "financial_invariants": "PASS",
+    "actual_kafka_reconciliation": "PASS"
+  },
+  {
+    "fault": "kafka-outage",
+    "result": "PASS",
+    "details": {
+      "committed_while_offline": 1,
+      "pending_outbox_observed": 2,
+      "new_notifications": 1
+    },
+    "financial_invariants": "PASS",
+    "actual_kafka_reconciliation": "PASS"
+  },
+  {
+    "fault": "postgres-restart",
+    "result": "PASS",
+    "details": {
+      "http_statuses": {
+        "500": 4,
+        "201": 8,
+        "503": 5,
+        "200": 23
+      },
+      "original_keys_settled": 8,
+      "conserved_delta": "0.0008"
+    },
+    "financial_invariants": "PASS",
+    "actual_kafka_reconciliation": "PASS"
+  }
+]

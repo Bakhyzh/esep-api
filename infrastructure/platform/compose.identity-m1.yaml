@@ -1,0 +1,6 @@
+# LOCAL Keycloak memory override. Preserve its existing DB, keys, password policy and realm.
+# Apply together with infrastructure/keycloak/compose.yaml and its existing private env.
+services:
+  keycloak:
+    environment:
+      JAVA_OPTS_KC_HEAP: -Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError

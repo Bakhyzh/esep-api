@@ -1,0 +1,1529 @@
+[
+  {
+    "utc": "2026-11-07T08:17:14.013743+00:00",
+    "containers": [
+      {
+        "BlockIO": "95.2MB / 27.4MB",
+        "CPUPerc": "2.03%",
+        "Container": "ecb01519c68e",
+        "ID": "ecb01519c68e",
+        "MemPerc": "56.89%",
+        "MemUsage": "91.03MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "19.2MB / 142kB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "1.4GB / 64.3MB",
+        "CPUPerc": "38.32%",
+        "Container": "38905ee43a84",
+        "ID": "38905ee43a84",
+        "MemPerc": "81.19%",
+        "MemUsage": "363.8MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "2.54MB / 16.8MB",
+        "PIDs": "55"
+      },
+      {
+        "BlockIO": "161MB / 201kB",
+        "CPUPerc": "1.02%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "57.53%",
+        "MemUsage": "441.8MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "593kB / 676kB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "2.09GB / 249MB",
+        "CPUPerc": "12.53%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "76.77%",
+        "MemUsage": "294.8MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "9.98MB / 149MB",
+        "PIDs": "60"
+      },
+      {
+        "BlockIO": "2.41GB / 152MB",
+        "CPUPerc": "5.84%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "64.97%",
+        "MemUsage": "249.5MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "6.32MB / 118MB",
+        "PIDs": "51"
+      },
+      {
+        "BlockIO": "1.54GB / 191MB",
+        "CPUPerc": "2.92%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "46.49%",
+        "MemUsage": "178.5MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.72MB / 84.4MB",
+        "PIDs": "45"
+      },
+      {
+        "BlockIO": "410MB / 2.37MB",
+        "CPUPerc": "1.79%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.45%",
+        "MemUsage": "1.57MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "17.6MB / 20.5MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "370MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "2.37%",
+        "MemUsage": "1.516MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "95.9kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.93GB / 224MB",
+        "CPUPerc": "24.43%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "65.72%",
+        "MemUsage": "210.3MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "9.26MB / 123MB",
+        "PIDs": "36"
+      },
+      {
+        "BlockIO": "1.85GB / 192MB",
+        "CPUPerc": "22.91%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "75.87%",
+        "MemUsage": "242.8MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "8.94MB / 113MB",
+        "PIDs": "34"
+      },
+      {
+        "BlockIO": "6.33GB / 18.4MB",
+        "CPUPerc": "5.57%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "35.96%",
+        "MemUsage": "17.26MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "13.8MB / 11.3MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.73GB / 17.5MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "44.74%",
+        "MemUsage": "14.32MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "9.08MB / 4.26MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.33GB / 16.8MB",
+        "CPUPerc": "0.00%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "39.22%",
+        "MemUsage": "18.82MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "40.2MB / 17.7MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "17.1GB / 294MB",
+        "CPUPerc": "6.54%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "18.35%",
+        "MemUsage": "93.98MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "22.8MB / 52.1MB",
+        "PIDs": "31"
+      },
+      {
+        "BlockIO": "6.34GB / 12MB",
+        "CPUPerc": "0.83%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "5.99%",
+        "MemUsage": "5.754MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.83MB / 9.45MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "23.4GB / 853MB",
+        "CPUPerc": "8.38%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "75.10%",
+        "MemUsage": "336.4MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "17MB / 19.4MB",
+        "PIDs": "93"
+      },
+      {
+        "BlockIO": "8.09GB / 140MB",
+        "CPUPerc": "0.15%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "9.59%",
+        "MemUsage": "36.82MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "3.04MB / 3.64MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794039436.991,
+          "26"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794039437.02,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794039437.027,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794039437.034,
+          "0.061514997458057954"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794039437.034,
+          "0.17636594663278274"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794039437.034,
+          "0.04517193249587616"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794039437.034,
+          "0.05397690411314389"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794039437.034,
+          "0.07072891489632362"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794039437.034,
+          "0.04874952393043037"
+        ]
+      }
+    ],
+    "hikari_active": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.039,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.039,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.039,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.039,
+          "0"
+        ]
+      }
+    ],
+    "hikari_pending": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.046,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.046,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.046,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.046,
+          "0"
+        ]
+      }
+    ],
+    "hikari_timeouts": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.05,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.05,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.05,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.05,
+          "0"
+        ]
+      }
+    ],
+    "hikari_max": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.054,
+          "5"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.054,
+          "10"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.054,
+          "5"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039437.054,
+          "5"
+        ]
+      }
+    ]
+  },
+  {
+    "utc": "2026-11-07T08:17:22.071625+00:00",
+    "containers": [
+      {
+        "BlockIO": "101MB / 27.6MB",
+        "CPUPerc": "2.93%",
+        "Container": "ecb01519c68e",
+        "ID": "ecb01519c68e",
+        "MemPerc": "60.12%",
+        "MemUsage": "96.19MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "20.9MB / 159kB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "1.4GB / 64.3MB",
+        "CPUPerc": "24.02%",
+        "Container": "38905ee43a84",
+        "ID": "38905ee43a84",
+        "MemPerc": "81.47%",
+        "MemUsage": "365MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "2.8MB / 17.4MB",
+        "PIDs": "54"
+      },
+      {
+        "BlockIO": "161MB / 201kB",
+        "CPUPerc": "0.22%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "57.54%",
+        "MemUsage": "441.9MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "594kB / 676kB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "2.09GB / 249MB",
+        "CPUPerc": "1.62%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "76.75%",
+        "MemUsage": "294.7MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "9.99MB / 150MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "2.41GB / 152MB",
+        "CPUPerc": "1.78%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "64.98%",
+        "MemUsage": "249.5MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "6.33MB / 118MB",
+        "PIDs": "50"
+      },
+      {
+        "BlockIO": "1.54GB / 191MB",
+        "CPUPerc": "1.30%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "46.47%",
+        "MemUsage": "178.5MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.73MB / 84.4MB",
+        "PIDs": "44"
+      },
+      {
+        "BlockIO": "410MB / 2.37MB",
+        "CPUPerc": "0.65%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.45%",
+        "MemUsage": "1.57MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "17.9MB / 20.8MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "370MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "2.36%",
+        "MemUsage": "1.508MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "96.8kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.93GB / 224MB",
+        "CPUPerc": "11.74%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "65.55%",
+        "MemUsage": "209.7MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "9.39MB / 123MB",
+        "PIDs": "36"
+      },
+      {
+        "BlockIO": "1.85GB / 192MB",
+        "CPUPerc": "8.82%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "75.99%",
+        "MemUsage": "243.2MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "9.08MB / 114MB",
+        "PIDs": "34"
+      },
+      {
+        "BlockIO": "6.33GB / 18.4MB",
+        "CPUPerc": "0.36%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "35.95%",
+        "MemUsage": "17.26MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "13.8MB / 11.3MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.73GB / 17.5MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "44.74%",
+        "MemUsage": "14.32MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "9.08MB / 4.26MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.33GB / 16.9MB",
+        "CPUPerc": "0.00%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "36.40%",
+        "MemUsage": "17.47MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "40.3MB / 17.7MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "17.1GB / 294MB",
+        "CPUPerc": "2.60%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "18.62%",
+        "MemUsage": "95.35MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "23MB / 52.3MB",
+        "PIDs": "31"
+      },
+      {
+        "BlockIO": "6.34GB / 12MB",
+        "CPUPerc": "0.86%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "5.99%",
+        "MemUsage": "5.754MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.87MB / 9.45MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "23.4GB / 855MB",
+        "CPUPerc": "5.89%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "74.92%",
+        "MemUsage": "335.6MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "17MB / 19.4MB",
+        "PIDs": "93"
+      },
+      {
+        "BlockIO": "8.09GB / 140MB",
+        "CPUPerc": "3.24%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "6.78%",
+        "MemUsage": "26.04MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "3.04MB / 3.64MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794039444.479,
+          "26"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794039444.492,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794039444.499,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794039444.505,
+          "0.061514997458057954"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794039444.505,
+          "0.14600760456273765"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794039444.505,
+          "0.02221661196667508"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794039444.505,
+          "0.03649265078560567"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794039444.505,
+          "0.07072891489632362"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794039444.505,
+          "0.074571972098922"
+        ]
+      }
+    ],
+    "hikari_active": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.513,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.513,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.513,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.513,
+          "0"
+        ]
+      }
+    ],
+    "hikari_pending": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.517,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.517,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.517,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.517,
+          "0"
+        ]
+      }
+    ],
+    "hikari_timeouts": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.521,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.521,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.521,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.521,
+          "0"
+        ]
+      }
+    ],
+    "hikari_max": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.525,
+          "5"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.525,
+          "10"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.525,
+          "5"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039444.525,
+          "5"
+        ]
+      }
+    ]
+  },
+  {
+    "utc": "2026-11-07T08:17:29.535211+00:00",
+    "containers": [
+      {
+        "BlockIO": "101MB / 27.6MB",
+        "CPUPerc": "8.64%",
+        "Container": "ecb01519c68e",
+        "ID": "ecb01519c68e",
+        "MemPerc": "60.19%",
+        "MemUsage": "96.3MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "22.2MB / 176kB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "1.4GB / 64.3MB",
+        "CPUPerc": "22.97%",
+        "Container": "38905ee43a84",
+        "ID": "38905ee43a84",
+        "MemPerc": "82.11%",
+        "MemUsage": "367.9MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "3.07MB / 17.6MB",
+        "PIDs": "54"
+      },
+      {
+        "BlockIO": "161MB / 201kB",
+        "CPUPerc": "0.22%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "57.54%",
+        "MemUsage": "441.9MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "594kB / 676kB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "2.1GB / 249MB",
+        "CPUPerc": "2.55%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "76.73%",
+        "MemUsage": "294.7MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "10MB / 150MB",
+        "PIDs": "58"
+      },
+      {
+        "BlockIO": "2.41GB / 152MB",
+        "CPUPerc": "2.02%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "64.96%",
+        "MemUsage": "249.5MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "6.33MB / 118MB",
+        "PIDs": "49"
+      },
+      {
+        "BlockIO": "1.54GB / 191MB",
+        "CPUPerc": "2.68%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "46.49%",
+        "MemUsage": "178.5MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.73MB / 84.6MB",
+        "PIDs": "44"
+      },
+      {
+        "BlockIO": "410MB / 2.37MB",
+        "CPUPerc": "0.82%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.47%",
+        "MemUsage": "1.578MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "18.2MB / 21.1MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "370MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "2.36%",
+        "MemUsage": "1.508MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "97.4kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.93GB / 224MB",
+        "CPUPerc": "10.37%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "65.66%",
+        "MemUsage": "210.1MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "9.52MB / 123MB",
+        "PIDs": "35"
+      },
+      {
+        "BlockIO": "1.85GB / 192MB",
+        "CPUPerc": "14.96%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "76.19%",
+        "MemUsage": "243.8MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "9.21MB / 114MB",
+        "PIDs": "33"
+      },
+      {
+        "BlockIO": "6.33GB / 18.4MB",
+        "CPUPerc": "0.11%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "34.90%",
+        "MemUsage": "16.75MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "13.9MB / 11.3MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.73GB / 17.5MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "46.44%",
+        "MemUsage": "14.86MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "9.1MB / 4.27MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.33GB / 16.9MB",
+        "CPUPerc": "9.69%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "38.74%",
+        "MemUsage": "18.59MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "40.4MB / 17.8MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "17.1GB / 294MB",
+        "CPUPerc": "19.83%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "18.29%",
+        "MemUsage": "93.66MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "23.1MB / 52.5MB",
+        "PIDs": "30"
+      },
+      {
+        "BlockIO": "6.34GB / 12MB",
+        "CPUPerc": "1.05%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "6.34%",
+        "MemUsage": "6.082MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.9MB / 9.48MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "23.4GB / 855MB",
+        "CPUPerc": "4.75%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "74.92%",
+        "MemUsage": "335.6MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "17MB / 19.4MB",
+        "PIDs": "93"
+      },
+      {
+        "BlockIO": "8.09GB / 140MB",
+        "CPUPerc": "0.00%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "6.78%",
+        "MemUsage": "26.04MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "3.04MB / 3.64MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794039452.4,
+          "25"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794039452.407,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794039452.413,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794039452.418,
+          "0.015286624203821654"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794039452.418,
+          "0.14573055028463"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794039452.418,
+          "0.019208896752179957"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794039452.418,
+          "0.01824632539280284"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794039452.418,
+          "0.09291698400609291"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794039452.418,
+          "0.074571972098922"
+        ]
+      }
+    ],
+    "hikari_active": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.423,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.423,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.423,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_active",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.423,
+          "0"
+        ]
+      }
+    ],
+    "hikari_pending": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.426,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.426,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.426,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_pending",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.426,
+          "0"
+        ]
+      }
+    ],
+    "hikari_timeouts": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.429,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.429,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.429,
+          "0"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_timeout_total",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.429,
+          "0"
+        ]
+      }
+    ],
+    "hikari_max": [
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.432,
+          "5"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.432,
+          "10"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.432,
+          "5"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "hikaricp_connections_max",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep",
+          "pool": "HikariPool-1"
+        },
+        "value": [
+          1794039452.432,
+          "5"
+        ]
+      }
+    ]
+  }
+]

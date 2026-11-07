@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from collections import Counter
 from decimal import Decimal
 import json
+import http.client
 from pathlib import Path
 import secrets
 import subprocess
@@ -47,7 +48,7 @@ def run(root,edge,alice,bob,source,recipient,api,wait,check,passed):
                 return response.status,response.headers.get('X-Gateway-Instance'),response.headers.get('X-Ledger-Instance')
         except urllib.error.HTTPError as e:
             e.close();return e.code,None,None
-        except (urllib.error.URLError,TimeoutError):return 0,None,None
+        except (urllib.error.URLError,TimeoutError,http.client.HTTPException):return 0,None,None
 
     def both():
         results=[probe() for _ in range(12)]
@@ -89,7 +90,7 @@ def run(root,edge,alice,bob,source,recipient,api,wait,check,passed):
             status=api(edge,'/api/transfers',alice[0],request,keys[index%8])[0]
             time.sleep(.03)
             return index,status
-        except (urllib.error.URLError,TimeoutError):return index,0
+        except (urllib.error.URLError,TimeoutError,http.client.HTTPException):return index,0
     try:
         with ThreadPoolExecutor(max_workers=4) as workers:
             futures=[workers.submit(transfer,n) for n in range(40)]
@@ -104,7 +105,7 @@ def run(root,edge,alice,bob,source,recipient,api,wait,check,passed):
                     status,result=api(edge,'/api/transfers',alice[0],request,key)
                     if status in (200,201):ids.append(result['id']);return True
                     return False
-                except (urllib.error.URLError,TimeoutError):return False
+                except (urllib.error.URLError,TimeoutError,http.client.HTTPException):return False
             wait(settled,'Idempotent recovery did not settle a transfer',20)
         check(len(set(ids))==8,'Logical financial operations were duplicated or collapsed')
         expected=Decimal('0.0008')

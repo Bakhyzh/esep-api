@@ -1,0 +1,1632 @@
+[
+  {
+    "utc": "2026-11-07T08:05:55.818903+00:00",
+    "containers": [
+      {
+        "BlockIO": "432MB / 226MB",
+        "CPUPerc": "3.85%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "57.10%",
+        "MemUsage": "438.5MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "1.2MB / 2.42MB",
+        "PIDs": "48"
+      },
+      {
+        "BlockIO": "1.55GB / 61.9MB",
+        "CPUPerc": "0.36%",
+        "Container": "81233e375274",
+        "ID": "81233e375274",
+        "MemPerc": "51.94%",
+        "MemUsage": "83.11MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "362MB / 102MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "374MB / 109MB",
+        "CPUPerc": "8.67%",
+        "Container": "4832005170bf",
+        "ID": "4832005170bf",
+        "MemPerc": "76.67%",
+        "MemUsage": "343.5MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "9.77MB / 117MB",
+        "PIDs": "55"
+      },
+      {
+        "BlockIO": "1.65GB / 217MB",
+        "CPUPerc": "9.29%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "80.84%",
+        "MemUsage": "310.4MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "7.66MB / 120MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "1.82GB / 116MB",
+        "CPUPerc": "1.38%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "70.88%",
+        "MemUsage": "272.2MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "5.42MB / 96.8MB",
+        "PIDs": "50"
+      },
+      {
+        "BlockIO": "1.14GB / 180MB",
+        "CPUPerc": "0.84%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "44.67%",
+        "MemUsage": "171.5MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.22MB / 69MB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "230MB / 2.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.39%",
+        "MemUsage": "1.531MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "14.4MB / 16.7MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "284MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "1.58%",
+        "MemUsage": "1.012MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "57.8kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.13GB / 205MB",
+        "CPUPerc": "47.11%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "64.79%",
+        "MemUsage": "207.3MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "7.32MB / 96.6MB",
+        "PIDs": "38"
+      },
+      {
+        "BlockIO": "1.36GB / 175MB",
+        "CPUPerc": "45.13%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "76.84%",
+        "MemUsage": "245.9MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "7.02MB / 88.3MB",
+        "PIDs": "35"
+      },
+      {
+        "BlockIO": "29.7GB / 260MB",
+        "CPUPerc": "3.29%",
+        "Container": "c92724e667f3",
+        "ID": "c92724e667f3",
+        "MemPerc": "47.41%",
+        "MemUsage": "91.02MiB / 192MiB",
+        "Name": "esep-platform-local-loki-1",
+        "NetIO": "1.64MB / 3.47MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "9.44GB / 120MB",
+        "CPUPerc": "0.97%",
+        "Container": "5744c5f299d4",
+        "ID": "5744c5f299d4",
+        "MemPerc": "46.37%",
+        "MemUsage": "59.36MiB / 128MiB",
+        "Name": "esep-platform-local-jaeger-1",
+        "NetIO": "6.54MB / 1.65MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "23.1GB / 278MB",
+        "CPUPerc": "2.41%",
+        "Container": "4629cda7f60f",
+        "ID": "4629cda7f60f",
+        "MemPerc": "61.74%",
+        "MemUsage": "59.27MiB / 96MiB",
+        "Name": "esep-platform-local-otel-collector-1",
+        "NetIO": "96MB / 10MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.79GB / 15.3MB",
+        "CPUPerc": "0.15%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "25.28%",
+        "MemUsage": "12.13MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "11.7MB / 9.61MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.56GB / 16.1MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "45.85%",
+        "MemUsage": "14.67MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "7.68MB / 3.61MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "3.95GB / 15.4MB",
+        "CPUPerc": "0.00%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "29.12%",
+        "MemUsage": "13.98MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "34.2MB / 15.1MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "14.3GB / 258MB",
+        "CPUPerc": "1.77%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "17.16%",
+        "MemUsage": "87.86MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "18.9MB / 43.9MB",
+        "PIDs": "27"
+      },
+      {
+        "BlockIO": "5.39GB / 9.28MB",
+        "CPUPerc": "0.83%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "5.61%",
+        "MemUsage": "5.383MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.25MB / 7.9MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "17.1GB / 713MB",
+        "CPUPerc": "154.69%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "83.19%",
+        "MemUsage": "372.7MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "13.6MB / 15.6MB",
+        "PIDs": "114"
+      },
+      {
+        "BlockIO": "7.55GB / 127MB",
+        "CPUPerc": "0.09%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "4.59%",
+        "MemUsage": "17.62MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "2.45MB / 3.03MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794038759.076,
+          "22"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794038759.095,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794038759.13,
+          "2"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794038759.15,
+          "0.03993428535321623"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794038759.15,
+          "0.10209754864796564"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794038759.15,
+          "0.03993428535321623"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794038759.15,
+          "0.05793418879430822"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038759.15,
+          "0.06424686986214746"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038759.15,
+          "0.08552631578947369"
+        ]
+      }
+    ]
+  },
+  {
+    "utc": "2026-11-07T08:06:04.164382+00:00",
+    "containers": [
+      {
+        "BlockIO": "432MB / 226MB",
+        "CPUPerc": "0.32%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "57.10%",
+        "MemUsage": "438.5MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "1.2MB / 2.42MB",
+        "PIDs": "48"
+      },
+      {
+        "BlockIO": "1.55GB / 61.9MB",
+        "CPUPerc": "2.45%",
+        "Container": "81233e375274",
+        "ID": "81233e375274",
+        "MemPerc": "52.18%",
+        "MemUsage": "83.48MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "364MB / 102MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "375MB / 109MB",
+        "CPUPerc": "8.68%",
+        "Container": "4832005170bf",
+        "ID": "4832005170bf",
+        "MemPerc": "76.83%",
+        "MemUsage": "344.2MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "9.95MB / 118MB",
+        "PIDs": "55"
+      },
+      {
+        "BlockIO": "1.65GB / 217MB",
+        "CPUPerc": "1.04%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "80.88%",
+        "MemUsage": "310.6MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "7.69MB / 121MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "1.82GB / 116MB",
+        "CPUPerc": "0.73%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "70.89%",
+        "MemUsage": "272.2MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "5.44MB / 96.8MB",
+        "PIDs": "50"
+      },
+      {
+        "BlockIO": "1.14GB / 180MB",
+        "CPUPerc": "0.88%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "44.70%",
+        "MemUsage": "171.6MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.22MB / 69.2MB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "230MB / 2.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.39%",
+        "MemUsage": "1.531MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "14.5MB / 16.8MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "284MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "1.58%",
+        "MemUsage": "1.012MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "57.8kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.13GB / 205MB",
+        "CPUPerc": "1.89%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "64.61%",
+        "MemUsage": "206.8MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "7.38MB / 97.1MB",
+        "PIDs": "38"
+      },
+      {
+        "BlockIO": "1.36GB / 175MB",
+        "CPUPerc": "2.38%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "76.71%",
+        "MemUsage": "245.5MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "7.08MB / 88.5MB",
+        "PIDs": "36"
+      },
+      {
+        "BlockIO": "29.7GB / 260MB",
+        "CPUPerc": "1.16%",
+        "Container": "c92724e667f3",
+        "ID": "c92724e667f3",
+        "MemPerc": "47.66%",
+        "MemUsage": "91.51MiB / 192MiB",
+        "Name": "esep-platform-local-loki-1",
+        "NetIO": "1.65MB / 3.47MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "9.44GB / 120MB",
+        "CPUPerc": "1.44%",
+        "Container": "5744c5f299d4",
+        "ID": "5744c5f299d4",
+        "MemPerc": "47.61%",
+        "MemUsage": "60.94MiB / 128MiB",
+        "Name": "esep-platform-local-jaeger-1",
+        "NetIO": "6.58MB / 1.65MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "23.1GB / 278MB",
+        "CPUPerc": "2.20%",
+        "Container": "4629cda7f60f",
+        "ID": "4629cda7f60f",
+        "MemPerc": "63.71%",
+        "MemUsage": "61.16MiB / 96MiB",
+        "Name": "esep-platform-local-otel-collector-1",
+        "NetIO": "96.7MB / 10.1MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.79GB / 15.3MB",
+        "CPUPerc": "0.10%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "27.02%",
+        "MemUsage": "12.97MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "11.8MB / 9.63MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.56GB / 16.1MB",
+        "CPUPerc": "3.42%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "41.43%",
+        "MemUsage": "13.26MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "7.7MB / 3.62MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "3.95GB / 15.4MB",
+        "CPUPerc": "0.00%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "30.05%",
+        "MemUsage": "14.42MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "34.3MB / 15.1MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "14.3GB / 258MB",
+        "CPUPerc": "0.23%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "17.29%",
+        "MemUsage": "88.52MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "19.1MB / 44.1MB",
+        "PIDs": "27"
+      },
+      {
+        "BlockIO": "5.39GB / 9.28MB",
+        "CPUPerc": "1.04%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "5.84%",
+        "MemUsage": "5.609MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.26MB / 7.93MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "17.1GB / 713MB",
+        "CPUPerc": "3.12%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "68.44%",
+        "MemUsage": "306.6MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "13.7MB / 15.7MB",
+        "PIDs": "93"
+      },
+      {
+        "BlockIO": "7.55GB / 127MB",
+        "CPUPerc": "3.38%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "4.80%",
+        "MemUsage": "18.45MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "2.45MB / 3.03MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794038767.073,
+          "22"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794038767.079,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794038767.081,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794038767.083,
+          "0.02113207547169811"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794038767.083,
+          "0.18823529411764706"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794038767.083,
+          "0.025809716599190284"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794038767.083,
+          "0.05793418879430822"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038767.083,
+          "0.07089505000632991"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038767.083,
+          "0.06607369758576874"
+        ]
+      }
+    ]
+  },
+  {
+    "utc": "2026-11-07T08:06:12.109414+00:00",
+    "containers": [
+      {
+        "BlockIO": "432MB / 226MB",
+        "CPUPerc": "6.08%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "57.10%",
+        "MemUsage": "438.5MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "1.2MB / 2.42MB",
+        "PIDs": "48"
+      },
+      {
+        "BlockIO": "1.55GB / 62MB",
+        "CPUPerc": "2.08%",
+        "Container": "81233e375274",
+        "ID": "81233e375274",
+        "MemPerc": "52.21%",
+        "MemUsage": "83.53MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "365MB / 102MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "375MB / 109MB",
+        "CPUPerc": "62.62%",
+        "Container": "4832005170bf",
+        "ID": "4832005170bf",
+        "MemPerc": "78.39%",
+        "MemUsage": "351.2MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "10.2MB / 119MB",
+        "PIDs": "55"
+      },
+      {
+        "BlockIO": "1.65GB / 217MB",
+        "CPUPerc": "1.82%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "80.99%",
+        "MemUsage": "311MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "7.72MB / 121MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "1.82GB / 116MB",
+        "CPUPerc": "8.76%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "71.14%",
+        "MemUsage": "273.2MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "5.46MB / 97.1MB",
+        "PIDs": "50"
+      },
+      {
+        "BlockIO": "1.14GB / 180MB",
+        "CPUPerc": "2.07%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "44.90%",
+        "MemUsage": "172.4MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.23MB / 69.5MB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "230MB / 2.08MB",
+        "CPUPerc": "1.18%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.75%",
+        "MemUsage": "1.762MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "14.7MB / 17.1MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "284MB / 2.11MB",
+        "CPUPerc": "0.91%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "2.04%",
+        "MemUsage": "1.309MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "57.8kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.13GB / 205MB",
+        "CPUPerc": "18.70%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "64.84%",
+        "MemUsage": "207.5MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "7.47MB / 97.6MB",
+        "PIDs": "38"
+      },
+      {
+        "BlockIO": "1.36GB / 175MB",
+        "CPUPerc": "23.63%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "76.99%",
+        "MemUsage": "246.4MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "7.17MB / 89MB",
+        "PIDs": "36"
+      },
+      {
+        "BlockIO": "29.7GB / 260MB",
+        "CPUPerc": "3.03%",
+        "Container": "c92724e667f3",
+        "ID": "c92724e667f3",
+        "MemPerc": "48.02%",
+        "MemUsage": "92.19MiB / 192MiB",
+        "Name": "esep-platform-local-loki-1",
+        "NetIO": "1.66MB / 3.47MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "9.44GB / 120MB",
+        "CPUPerc": "1.63%",
+        "Container": "5744c5f299d4",
+        "ID": "5744c5f299d4",
+        "MemPerc": "44.21%",
+        "MemUsage": "56.59MiB / 128MiB",
+        "Name": "esep-platform-local-jaeger-1",
+        "NetIO": "6.61MB / 1.66MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "23.1GB / 278MB",
+        "CPUPerc": "2.54%",
+        "Container": "4629cda7f60f",
+        "ID": "4629cda7f60f",
+        "MemPerc": "65.19%",
+        "MemUsage": "62.59MiB / 96MiB",
+        "Name": "esep-platform-local-otel-collector-1",
+        "NetIO": "97.2MB / 10.1MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.8GB / 15.3MB",
+        "CPUPerc": "0.67%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "28.39%",
+        "MemUsage": "13.62MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "11.8MB / 9.66MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.56GB / 16.1MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "44.19%",
+        "MemUsage": "14.14MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "7.7MB / 3.62MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "3.95GB / 15.4MB",
+        "CPUPerc": "0.00%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "29.12%",
+        "MemUsage": "13.98MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "34.4MB / 15.2MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "14.3GB / 259MB",
+        "CPUPerc": "11.07%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "15.46%",
+        "MemUsage": "79.16MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "19.2MB / 44.4MB",
+        "PIDs": "27"
+      },
+      {
+        "BlockIO": "5.39GB / 9.28MB",
+        "CPUPerc": "0.73%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "5.84%",
+        "MemUsage": "5.609MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.28MB / 7.93MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "17.1GB / 715MB",
+        "CPUPerc": "7.28%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "67.58%",
+        "MemUsage": "302.8MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "13.8MB / 15.8MB",
+        "PIDs": "93"
+      },
+      {
+        "BlockIO": "7.55GB / 127MB",
+        "CPUPerc": "0.02%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "4.75%",
+        "MemUsage": "18.23MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "2.45MB / 3.03MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794038775.274,
+          "22"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794038775.282,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794038775.287,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794038775.292,
+          "0.020494876280929768"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794038775.292,
+          "0.18823529411764706"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794038775.292,
+          "0.025809716599190284"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794038775.292,
+          "0.02026599113362888"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038775.292,
+          "0.07089505000632991"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038775.292,
+          "0.06203505232631446"
+        ]
+      }
+    ]
+  },
+  {
+    "utc": "2026-11-07T08:06:20.329278+00:00",
+    "containers": [
+      {
+        "BlockIO": "432MB / 227MB",
+        "CPUPerc": "0.45%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "56.46%",
+        "MemUsage": "433.6MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "1.2MB / 2.42MB",
+        "PIDs": "47"
+      },
+      {
+        "BlockIO": "1.55GB / 62.1MB",
+        "CPUPerc": "4.29%",
+        "Container": "81233e375274",
+        "ID": "81233e375274",
+        "MemPerc": "52.57%",
+        "MemUsage": "84.11MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "367MB / 102MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "396MB / 110MB",
+        "CPUPerc": "44.73%",
+        "Container": "4832005170bf",
+        "ID": "4832005170bf",
+        "MemPerc": "80.92%",
+        "MemUsage": "362.5MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "10.4MB / 119MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "1.65GB / 222MB",
+        "CPUPerc": "10.35%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "79.70%",
+        "MemUsage": "306.1MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "7.75MB / 122MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "1.82GB / 117MB",
+        "CPUPerc": "2.55%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "70.65%",
+        "MemUsage": "271.3MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "5.47MB / 97.4MB",
+        "PIDs": "50"
+      },
+      {
+        "BlockIO": "1.14GB / 181MB",
+        "CPUPerc": "6.31%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "44.73%",
+        "MemUsage": "171.8MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.23MB / 69.5MB",
+        "PIDs": "42"
+      },
+      {
+        "BlockIO": "230MB / 2.08MB",
+        "CPUPerc": "0.00%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "3.03%",
+        "MemUsage": "1.941MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "14.8MB / 17.1MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "284MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "1.65%",
+        "MemUsage": "1.059MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "57.8kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.13GB / 206MB",
+        "CPUPerc": "4.46%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "64.18%",
+        "MemUsage": "205.4MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "7.52MB / 98.1MB",
+        "PIDs": "38"
+      },
+      {
+        "BlockIO": "1.36GB / 176MB",
+        "CPUPerc": "4.12%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "76.81%",
+        "MemUsage": "245.8MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "7.22MB / 89.4MB",
+        "PIDs": "36"
+      },
+      {
+        "BlockIO": "29.7GB / 261MB",
+        "CPUPerc": "3.82%",
+        "Container": "c92724e667f3",
+        "ID": "c92724e667f3",
+        "MemPerc": "50.10%",
+        "MemUsage": "96.19MiB / 192MiB",
+        "Name": "esep-platform-local-loki-1",
+        "NetIO": "1.67MB / 3.47MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "9.44GB / 120MB",
+        "CPUPerc": "0.86%",
+        "Container": "5744c5f299d4",
+        "ID": "5744c5f299d4",
+        "MemPerc": "44.24%",
+        "MemUsage": "56.62MiB / 128MiB",
+        "Name": "esep-platform-local-jaeger-1",
+        "NetIO": "6.63MB / 1.66MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "23.1GB / 278MB",
+        "CPUPerc": "2.35%",
+        "Container": "4629cda7f60f",
+        "ID": "4629cda7f60f",
+        "MemPerc": "68.49%",
+        "MemUsage": "65.75MiB / 96MiB",
+        "Name": "esep-platform-local-otel-collector-1",
+        "NetIO": "97.5MB / 10.2MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.8GB / 15.3MB",
+        "CPUPerc": "0.34%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "25.26%",
+        "MemUsage": "12.12MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "11.8MB / 9.68MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.56GB / 16.1MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "38.28%",
+        "MemUsage": "12.25MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "7.72MB / 3.63MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "3.95GB / 15.4MB",
+        "CPUPerc": "9.99%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "29.98%",
+        "MemUsage": "14.39MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "34.5MB / 15.2MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "14.3GB / 260MB",
+        "CPUPerc": "25.15%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "15.24%",
+        "MemUsage": "78.04MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "19.3MB / 44.6MB",
+        "PIDs": "27"
+      },
+      {
+        "BlockIO": "5.39GB / 9.28MB",
+        "CPUPerc": "3.37%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "7.76%",
+        "MemUsage": "7.449MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.29MB / 7.95MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "17.1GB / 718MB",
+        "CPUPerc": "141.81%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "82.70%",
+        "MemUsage": "370.5MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "13.8MB / 15.8MB",
+        "PIDs": "118"
+      },
+      {
+        "BlockIO": "7.55GB / 128MB",
+        "CPUPerc": "6.12%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "4.79%",
+        "MemUsage": "18.39MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "2.45MB / 3.03MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794038783.396,
+          "22"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794038783.429,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794038783.438,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794038783.444,
+          "0.020494876280929768"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794038783.444,
+          "0.16549295774647887"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794038783.444,
+          "0.021648835745752045"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794038783.444,
+          "0.024150943396226414"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038783.444,
+          "0.06145321747890694"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038783.444,
+          "0.06048387096774193"
+        ]
+      }
+    ]
+  },
+  {
+    "utc": "2026-11-07T08:06:28.467378+00:00",
+    "containers": [
+      {
+        "BlockIO": "434MB / 227MB",
+        "CPUPerc": "0.32%",
+        "Container": "ca584d66ad4b",
+        "ID": "ca584d66ad4b",
+        "MemPerc": "56.73%",
+        "MemUsage": "435.6MiB / 768MiB",
+        "Name": "esep-identity-dev-keycloak-1",
+        "NetIO": "1.2MB / 2.42MB",
+        "PIDs": "47"
+      },
+      {
+        "BlockIO": "1.55GB / 62.3MB",
+        "CPUPerc": "3.50%",
+        "Container": "81233e375274",
+        "ID": "81233e375274",
+        "MemPerc": "51.82%",
+        "MemUsage": "82.91MiB / 160MiB",
+        "Name": "esep-platform-local-prometheus-1",
+        "NetIO": "369MB / 102MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "441MB / 110MB",
+        "CPUPerc": "6.78%",
+        "Container": "4832005170bf",
+        "ID": "4832005170bf",
+        "MemPerc": "88.48%",
+        "MemUsage": "396.4MiB / 448MiB",
+        "Name": "esep-platform-local-ledger-1",
+        "NetIO": "10.4MB / 120MB",
+        "PIDs": "60"
+      },
+      {
+        "BlockIO": "1.65GB / 222MB",
+        "CPUPerc": "1.16%",
+        "Container": "7b7060fef452",
+        "ID": "7b7060fef452",
+        "MemPerc": "80.03%",
+        "MemUsage": "307.3MiB / 384MiB",
+        "Name": "esep-platform-local-analytics-1",
+        "NetIO": "7.77MB / 122MB",
+        "PIDs": "59"
+      },
+      {
+        "BlockIO": "1.82GB / 117MB",
+        "CPUPerc": "2.85%",
+        "Container": "00ae7f85bde6",
+        "ID": "00ae7f85bde6",
+        "MemPerc": "70.80%",
+        "MemUsage": "271.9MiB / 384MiB",
+        "Name": "esep-platform-local-notification-1",
+        "NetIO": "5.49MB / 97.8MB",
+        "PIDs": "50"
+      },
+      {
+        "BlockIO": "1.14GB / 181MB",
+        "CPUPerc": "6.19%",
+        "Container": "c79e434d1180",
+        "ID": "c79e434d1180",
+        "MemPerc": "45.44%",
+        "MemUsage": "174.5MiB / 384MiB",
+        "Name": "esep-platform-local-user-1",
+        "NetIO": "2.24MB / 69.7MB",
+        "PIDs": "45"
+      },
+      {
+        "BlockIO": "230MB / 2.08MB",
+        "CPUPerc": "0.39%",
+        "Container": "ff420b2f6c97",
+        "ID": "ff420b2f6c97",
+        "MemPerc": "2.50%",
+        "MemUsage": "1.598MiB / 64MiB",
+        "Name": "esep-platform-local-edge-1",
+        "NetIO": "14.8MB / 17.2MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "284MB / 2.11MB",
+        "CPUPerc": "0.00%",
+        "Container": "ecbd08fb4c5a",
+        "ID": "ecbd08fb4c5a",
+        "MemPerc": "1.72%",
+        "MemUsage": "1.098MiB / 64MiB",
+        "Name": "esep-platform-local-web-1",
+        "NetIO": "57.8kB / 2.76MB",
+        "PIDs": "2"
+      },
+      {
+        "BlockIO": "2.14GB / 206MB",
+        "CPUPerc": "5.43%",
+        "Container": "92fdf21fdd2d",
+        "ID": "92fdf21fdd2d",
+        "MemPerc": "67.26%",
+        "MemUsage": "215.2MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-2-1",
+        "NetIO": "7.54MB / 98.4MB",
+        "PIDs": "38"
+      },
+      {
+        "BlockIO": "1.36GB / 176MB",
+        "CPUPerc": "3.26%",
+        "Container": "5425c94d4e54",
+        "ID": "5425c94d4e54",
+        "MemPerc": "78.63%",
+        "MemUsage": "251.6MiB / 320MiB",
+        "Name": "esep-platform-local-gateway-1",
+        "NetIO": "7.24MB / 89.8MB",
+        "PIDs": "36"
+      },
+      {
+        "BlockIO": "29.7GB / 262MB",
+        "CPUPerc": "2.20%",
+        "Container": "c92724e667f3",
+        "ID": "c92724e667f3",
+        "MemPerc": "43.47%",
+        "MemUsage": "83.46MiB / 192MiB",
+        "Name": "esep-platform-local-loki-1",
+        "NetIO": "1.67MB / 3.47MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "9.44GB / 120MB",
+        "CPUPerc": "1.09%",
+        "Container": "5744c5f299d4",
+        "ID": "5744c5f299d4",
+        "MemPerc": "44.26%",
+        "MemUsage": "56.66MiB / 128MiB",
+        "Name": "esep-platform-local-jaeger-1",
+        "NetIO": "6.65MB / 1.66MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "23.1GB / 278MB",
+        "CPUPerc": "1.61%",
+        "Container": "4629cda7f60f",
+        "ID": "4629cda7f60f",
+        "MemPerc": "69.93%",
+        "MemUsage": "67.13MiB / 96MiB",
+        "Name": "esep-platform-local-otel-collector-1",
+        "NetIO": "97.9MB / 10.2MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "4.8GB / 15.3MB",
+        "CPUPerc": "0.14%",
+        "Container": "9ea34f0b6fd5",
+        "ID": "9ea34f0b6fd5",
+        "MemPerc": "25.29%",
+        "MemUsage": "12.14MiB / 48MiB",
+        "Name": "esep-platform-local-kafka-exporter-1",
+        "NetIO": "11.8MB / 9.68MB",
+        "PIDs": "12"
+      },
+      {
+        "BlockIO": "1.56GB / 16.1MB",
+        "CPUPerc": "0.00%",
+        "Container": "a7f43e9f0b94",
+        "ID": "a7f43e9f0b94",
+        "MemPerc": "38.46%",
+        "MemUsage": "12.31MiB / 32MiB",
+        "Name": "esep-platform-local-redis-exporter-1",
+        "NetIO": "7.74MB / 3.64MB",
+        "PIDs": "14"
+      },
+      {
+        "BlockIO": "3.95GB / 15.4MB",
+        "CPUPerc": "0.00%",
+        "Container": "9e2715bbf0dc",
+        "ID": "9e2715bbf0dc",
+        "MemPerc": "30.00%",
+        "MemUsage": "14.4MiB / 48MiB",
+        "Name": "esep-platform-local-postgres-exporter-1",
+        "NetIO": "34.5MB / 15.2MB",
+        "PIDs": "11"
+      },
+      {
+        "BlockIO": "14.3GB / 261MB",
+        "CPUPerc": "3.31%",
+        "Container": "2e793ffc8e30",
+        "ID": "2e793ffc8e30",
+        "MemPerc": "15.34%",
+        "MemUsage": "78.54MiB / 512MiB",
+        "Name": "esep-platform-local-postgres-1",
+        "NetIO": "19.4MB / 44.6MB",
+        "PIDs": "27"
+      },
+      {
+        "BlockIO": "5.39GB / 9.28MB",
+        "CPUPerc": "0.78%",
+        "Container": "9ac7588e2146",
+        "ID": "9ac7588e2146",
+        "MemPerc": "7.85%",
+        "MemUsage": "7.531MiB / 96MiB",
+        "Name": "esep-platform-local-redis-1",
+        "NetIO": "2.3MB / 7.97MB",
+        "PIDs": "6"
+      },
+      {
+        "BlockIO": "17.1GB / 730MB",
+        "CPUPerc": "3.68%",
+        "Container": "692349f6baf9",
+        "ID": "692349f6baf9",
+        "MemPerc": "66.58%",
+        "MemUsage": "298.3MiB / 448MiB",
+        "Name": "esep-platform-local-kafka-1",
+        "NetIO": "13.9MB / 15.8MB",
+        "PIDs": "93"
+      },
+      {
+        "BlockIO": "7.55GB / 128MB",
+        "CPUPerc": "0.04%",
+        "Container": "c26115e65e93",
+        "ID": "c26115e65e93",
+        "MemPerc": "4.84%",
+        "MemUsage": "18.6MiB / 384MiB",
+        "Name": "esep-identity-dev-keycloak-db-1",
+        "NetIO": "2.45MB / 3.03MB",
+        "PIDs": "8"
+      }
+    ],
+    "postgres_connections": [
+      {
+        "metric": {},
+        "value": [
+          1794038791.297,
+          "22"
+        ]
+      }
+    ],
+    "kafka_lag": [
+      {
+        "metric": {},
+        "value": [
+          1794038791.303,
+          "0"
+        ]
+      }
+    ],
+    "outbox_pending": [
+      {
+        "metric": {},
+        "value": [
+          1794038791.307,
+          "0"
+        ]
+      }
+    ],
+    "jvm_cpu": [
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "user-service",
+          "instance": "user:8083",
+          "job": "esep"
+        },
+        "value": [
+          1794038791.31,
+          "0.018504240555127217"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "ledger-service",
+          "instance": "ledger:8082",
+          "job": "esep"
+        },
+        "value": [
+          1794038791.31,
+          "0.25487712186470735"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "notification-service",
+          "instance": "notification:8084",
+          "job": "esep"
+        },
+        "value": [
+          1794038791.31,
+          "0.030761472516389308"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "analytics-service",
+          "instance": "analytics:8085",
+          "job": "esep"
+        },
+        "value": [
+          1794038791.31,
+          "0.025728339008702233"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038791.31,
+          "0.07501267105930055"
+        ]
+      },
+      {
+        "metric": {
+          "__name__": "process_cpu_usage",
+          "application": "api-gateway",
+          "instance": "gateway-2:8080",
+          "job": "esep"
+        },
+        "value": [
+          1794038791.31,
+          "0.07130214917825538"
+        ]
+      }
+    ]
+  }
+]

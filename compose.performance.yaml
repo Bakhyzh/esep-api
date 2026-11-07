@@ -1,0 +1,19 @@
+services:
+  k6:
+    profiles: [performance]
+    image: grafana/k6:2.3.0@sha256:2dd4756ec6e14e62778916e1eb850108e4b499304c02df56760fa0bdb0fba0b8
+    user: "${PERF_UID:-1000}:${PERF_GID:-1000}"
+    command: [run, --quiet, --include-system-env-vars, /work/platform.js]
+    environment:
+      ESEP_PERF_ACTORS: ${ESEP_PERF_ACTORS:?Use the protected performance orchestrator}
+      ESEP_PERF_CASE: ${ESEP_PERF_CASE:?required}
+      ESEP_PERF_SUMMARY: /results/${ESEP_PERF_CASE}.summary.json
+    volumes:
+      - ./tests/performance:/work:ro
+      - ${PERF_RESULTS_DIR:?required}:/results
+    networks: [default, identity]
+    read_only: true
+    tmpfs: ["/tmp:size=32m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m

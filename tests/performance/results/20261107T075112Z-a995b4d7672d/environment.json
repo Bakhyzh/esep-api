@@ -1,0 +1,13 @@
+{
+  "architecture": "arm64",
+  "physical_memory_bytes": 8589934592,
+  "host_cpus": 8,
+  "docker_memory_bytes": 4109803520,
+  "docker_cpus": 8,
+  "k6": "k6 v2.3.0 (commit/devel, go1.27.1, darwin/arm64)",
+  "shared_host": true,
+  "actor_count": 8,
+  "currency": "KZT",
+  "initial_synthetic_funding": "800.0000",
+  "ledger_instances": 1
+}

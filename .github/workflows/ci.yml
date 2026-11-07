@@ -235,3 +235,16 @@ jobs:
           mkdir -p /tmp/observability-scan
           git archive HEAD infrastructure/observability tests/observability compose.monitoring.yaml compose.monitoring-compact.yaml docs/architecture/OBSERVABILITY.md docs/architecture/PHASE_G_OBSERVABILITY_REPORT.md | tar -x -C /tmp/observability-scan
           docker run --rm -v /tmp/observability-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
+
+  performance-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compile all bounded k6 scenarios and validate isolated Compose
+        run: python3 tests/performance/validate.py
+      - name: Validate fault orchestrator syntax and scan committed performance sources
+        run: |
+          python3 -m py_compile tests/performance/*.py tests/e2e/replica-failures.py
+          mkdir -p /tmp/performance-scan
+          git archive HEAD tests/performance compose.performance.yaml infrastructure/platform/compose.identity-m1.yaml | tar -x -C /tmp/performance-scan
+          docker run --rm -v /tmp/performance-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner

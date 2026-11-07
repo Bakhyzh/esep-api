@@ -1,7 +1,8 @@
 # Phase G — observability implementation report
 
 Status: implemented and verified locally with explicit compact monitoring and
-separate two-Ledger fault-test modes. Feature CI and main publication pending.
+separate two-Ledger fault-test modes. Published main5054eb2e4e22f63bf057e1558662c201fcb7e3e5;
+CI42352264110 all9 jobs successful; remote SHA verified.
 Full seven-app plus dashboard operation on the shared4-GB Docker VM is not supported
 by the observed resource budget; it is not claimed as verified.
 
@@ -146,3 +147,5 @@ review. Performance and final hardening phases remain outstanding.
 Git commit/push and remote SHA: pending feature CI/publication at report creation.
 Previous verified backend main: c53eb8df912d7e3d36b51d67e3d46e3482909ec5;
 frontend: a70afab85289b299fe49f481fc909b999d25faf6. No production deployment.
+
+Publication receipt: final CI also executed the added request-log regression tests: Ledger93, User6, Notification7, Analytics12, Gateway8; monolith248 with one opt-in live skip. All completed successfully.
