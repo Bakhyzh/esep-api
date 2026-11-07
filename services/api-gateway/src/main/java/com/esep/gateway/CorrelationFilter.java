@@ -12,11 +12,11 @@ public class CorrelationFilter implements WebFilter {
     public CorrelationFilter(GatewayProperties properties) { this.properties=properties; }
     @Override public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         String supplied=exchange.getRequest().getHeaders().getFirst("X-Correlation-ID");
-        String id=supplied!=null && supplied.matches("[A-Za-z0-9_-]{1,64}") ? supplied : UUID.randomUUID().toString();
+        String id=supplied!=null && supplied.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}") ? supplied : UUID.randomUUID().toString();
         var clean=exchange.mutate().request(r->r.headers(h->{
             for(String name:List.copyOf(h.headerNames())) {
                 String lower=name.toLowerCase(Locale.ROOT);
-                if(lower.startsWith("x-user-") || lower.startsWith("x-sc-lb-") || lower.startsWith("x-forwarded-") || lower.equals("forwarded")) h.remove(name);
+                if(lower.startsWith("x-user-") || lower.startsWith("x-sc-lb-") || lower.equals("baggage") || lower.equals("tracestate") || lower.startsWith("x-forwarded-") || lower.equals("forwarded")) h.remove(name);
             }
             h.set("X-Correlation-ID",id);
         })).build();

@@ -1,0 +1,29 @@
+# Synthetic rule unit-test input, never a performance measurement.
+rule_files: [alerts.yaml]
+evaluation_interval: 10s
+tests:
+  - interval: 10s
+    input_series:
+      - series: 'esep_outbox_oldest_seconds{application="ledger-service"}'
+        values: '120+10x18'
+      - series: 'esep_outbox_backlog{application="ledger-service"}'
+        values: '4+0x18'
+    alert_rule_test:
+      - eval_time: 30s
+        alertname: OutboxNotDraining
+        exp_alerts: []
+      - eval_time: 80s
+        alertname: OutboxNotDraining
+        exp_alerts:
+          - exp_labels: {application: ledger-service, severity: critical}
+            exp_annotations: {summary: 'Committed events have waited for publication more than one minute'}
+  - interval: 10s
+    input_series:
+      - series: 'redis_up{job="redis"}'
+        values: '0+0x12'
+    alert_rule_test:
+      - eval_time: 40s
+        alertname: RedisUnavailable
+        exp_alerts:
+          - exp_labels: {job: redis, severity: warning}
+            exp_annotations: {summary: 'Redis unavailable; cache falls back, Gateway rejects writes'}

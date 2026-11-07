@@ -27,11 +27,12 @@ public class NotificationKafkaConfig {
         }
         return new org.springframework.kafka.core.KafkaAdmin.NewTopics(topics.toArray(NewTopic[]::new));
     }
-    @Bean DefaultErrorHandler notificationErrors(KafkaTemplate<String,String> kafka){
+    @Bean DefaultErrorHandler notificationErrors(KafkaTemplate<String,String> kafka,io.micrometer.core.instrument.MeterRegistry registry){
         var recoverer=new DeadLetterPublishingRecoverer(kafka,(record,error)->new TopicPartition(record.topic()+".notification.DLT",record.partition()));
-        recoverer.setFailIfSendResultIsError(true);
+        recoverer.setFailIfSendResultIsError(true);recoverer.setLogRecoveryRecord(false);
         var handler=new DefaultErrorHandler(recoverer,new FixedBackOff(500,3));
         handler.addNotRetryableExceptions(IllegalArgumentException.class,DataIntegrityViolationException.class);
+        com.esep.observability.KafkaRetryMetrics.attach(handler,registry);
         return handler;
     }
 }

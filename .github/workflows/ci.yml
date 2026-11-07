@@ -212,3 +212,26 @@ jobs:
           mkdir -p /tmp/ops-scan
           git archive HEAD infrastructure/ops infrastructure/ops-tests docs/runbooks/platform-operations.md docs/architecture/PHASE_F_RECOVERY_REPORT.md | tar -x -C /tmp/ops-scan
           docker run --rm -v /tmp/ops-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
+
+  observability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate platform and optional monitoring Compose without starting services
+        run: python3 infrastructure/platform/validate-config.py
+      - name: Validate pinned telemetry configurations and alert behavior
+        run: |
+          docker run --rm --entrypoint /bin/promtool -v "$PWD/infrastructure/observability:/config:ro" -w /config prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06 check rules alerts.yaml
+          docker run --rm --entrypoint /bin/promtool -v "$PWD/infrastructure/observability:/config:ro" -w /config prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06 test rules alerts.test.yaml
+          docker run --rm -v "$PWD/infrastructure/observability/collector.yaml:/config.yaml:ro" otel/opentelemetry-collector-contrib:0.164.0@sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b validate --config=/config.yaml
+          docker run --rm -v "$PWD/infrastructure/observability/loki.yaml:/config.yaml:ro" grafana/loki:3.7.9@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28 -config.file=/config.yaml -verify-config
+      - name: Validate full and compact Prometheus target configurations
+        run: docker run --rm --entrypoint /bin/promtool -v "$PWD/infrastructure/observability:/etc/prometheus:ro" prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06 check config /etc/prometheus/prometheus.yaml /etc/prometheus/prometheus-compact.yaml
+      - name: Validate Jaeger v2 configuration
+        run: docker run --rm -v "$PWD/infrastructure/observability/jaeger.yaml:/config.yaml:ro" jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e validate --config=/config.yaml
+      - name: Scan monitoring configuration and smoke helper
+        run: |
+          python3 -m py_compile tests/observability/verify.py infrastructure/platform/validate-config.py
+          mkdir -p /tmp/observability-scan
+          git archive HEAD infrastructure/observability tests/observability compose.monitoring.yaml compose.monitoring-compact.yaml docs/architecture/OBSERVABILITY.md docs/architecture/PHASE_G_OBSERVABILITY_REPORT.md | tar -x -C /tmp/observability-scan
+          docker run --rm -v /tmp/observability-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner

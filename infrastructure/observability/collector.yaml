@@ -1,0 +1,49 @@
+receivers:
+  otlp:
+    protocols:
+      grpc: {endpoint: '0.0.0.0:4317'}
+      http: {endpoint: '0.0.0.0:4318'}
+processors:
+  memory_limiter: {check_interval: 1s, limit_mib: 64, spike_limit_mib: 16}
+  transform/privacy:
+    error_mode: propagate
+    trace_statements:
+      - context: resource
+        statements:
+          - keep_keys(attributes, ["service.name", "service.instance.id", "deployment.environment.name"])
+      - context: span
+        statements:
+          - keep_keys(attributes, ["http.route", "http.request.method", "http.response.status_code", "http.method", "http.status_code", "error.type", "messaging.system", "messaging.destination.name", "messaging.operation.name", "messaging.operation.type", "messaging.kafka.consumer.group", "spring.kafka.listener.id"])
+          - set(name, "http.request") where attributes["http.request.method"] != nil or attributes["http.method"] != nil
+          - set(name, "messaging.operation") where attributes["messaging.system"] != nil
+          - set(name, "application.operation") where attributes["http.request.method"] == nil and attributes["http.method"] == nil and attributes["messaging.system"] == nil and name != "outbox.publish"
+          - set(status.message, "")
+      - context: spanevent
+        statements:
+          - keep_keys(attributes, ["exception.type"])
+          - set(name, "event")
+    log_statements:
+      - context: resource
+        statements:
+          - keep_keys(attributes, ["service.name", "service.instance.id", "deployment.environment.name"])
+      - context: log
+        statements:
+          - keep_keys(attributes, ["route", "method", "status", "correlation_id", "traceId", "spanId"])
+          # Only deliberately bounded request summaries leave the process. Startup/error details remain local.
+          - set(body, "Application event") where body != "HTTP request completed" and body != "Gateway request completed"
+  batch: {timeout: 1s, send_batch_size: 128, send_batch_max_size: 256}
+exporters:
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls: {insecure: true}
+    sending_queue: {queue_size: 256}
+  otlp_http/loki:
+    endpoint: http://loki:3100/otlp
+    sending_queue: {queue_size: 256}
+extensions:
+  health_check: {endpoint: '0.0.0.0:13133'}
+service:
+  extensions: [health_check]
+  pipelines:
+    traces: {receivers: [otlp], processors: [memory_limiter, transform/privacy, batch], exporters: [otlp/jaeger]}
+    logs: {receivers: [otlp], processors: [memory_limiter, transform/privacy, batch], exporters: [otlp_http/loki]}

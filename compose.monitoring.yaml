@@ -1,0 +1,254 @@
+{
+  "services": {
+    "user": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "observability"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      }
+    },
+    "ledger": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "local,observability",
+        "JAVA_OPTS": "-Xms64m -Xmx160m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      },
+      "mem_limit": "448m"
+    },
+    "ledger-2": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "local,observability",
+        "JAVA_OPTS": "-Xms64m -Xmx160m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      },
+      "mem_limit": "448m"
+    },
+    "notification": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "observability"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      }
+    },
+    "analytics": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "observability"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      }
+    },
+    "gateway": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "replicated,observability"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      }
+    },
+    "gateway-2": {
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "replicated,observability"
+      },
+      "healthcheck": {
+        "start_period": "300s"
+      }
+    },
+    "prometheus": {
+      "image": "prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "command": [
+        "--config.file=/etc/prometheus/prometheus.yaml",
+        "--storage.tsdb.retention.time=24h",
+        "--storage.tsdb.retention.size=256MB"
+      ],
+      "volumes": [
+        "./infrastructure/observability/prometheus.yaml:/etc/prometheus/prometheus.yaml:ro",
+        "./infrastructure/observability/alerts.yaml:/etc/prometheus/alerts.yaml:ro",
+        "platform-prometheus:/prometheus"
+      ],
+      "ports": [
+        "127.0.0.1:19090:9090"
+      ],
+      "mem_limit": "160m"
+    },
+    "grafana": {
+      "image": "grafana/grafana:13.3.0@sha256:488984b716c0862639f91a698adbe2862677a5a07bad42da5f03f3030883b205",
+      "profiles": [
+        "dashboards"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "environment": {
+        "GF_SECURITY_ADMIN_USER": "platform-operator",
+        "GF_SECURITY_ADMIN_PASSWORD": "${GRAFANA_ADMIN_PASSWORD:?required}",
+        "GF_AUTH_ANONYMOUS_ENABLED": "false",
+        "GF_USERS_ALLOW_SIGN_UP": "false",
+        "GF_ANALYTICS_REPORTING_ENABLED": "false",
+        "GF_ANALYTICS_CHECK_FOR_UPDATES": "false",
+        "GF_PLUGINS_CHECK_FOR_UPDATES": "false",
+        "GOMEMLIMIT": "180MiB"
+      },
+      "volumes": [
+        "platform-grafana:/var/lib/grafana",
+        "./infrastructure/observability/grafana/provisioning:/etc/grafana/provisioning:ro",
+        "./infrastructure/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro"
+      ],
+      "ports": [
+        "127.0.0.1:13000:3000"
+      ],
+      "mem_limit": "256m"
+    },
+    "loki": {
+      "image": "grafana/loki:3.7.9@sha256:0db216b630ae1f348a1584c67f3cead8b4c1fc839169a39501db664744158e28",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "command": [
+        "-config.file=/etc/loki/platform.yaml"
+      ],
+      "volumes": [
+        "./infrastructure/observability/loki.yaml:/etc/loki/platform.yaml:ro",
+        "platform-loki:/loki"
+      ],
+      "ports": [
+        "127.0.0.1:13100:3100"
+      ],
+      "mem_limit": "192m"
+    },
+    "jaeger": {
+      "image": "jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "command": [
+        "--config=/etc/jaeger/platform.yaml"
+      ],
+      "volumes": [
+        "./infrastructure/observability/jaeger.yaml:/etc/jaeger/platform.yaml:ro"
+      ],
+      "ports": [
+        "127.0.0.1:16686:16686"
+      ],
+      "mem_limit": "128m"
+    },
+    "otel-collector": {
+      "image": "otel/opentelemetry-collector-contrib:0.164.0@sha256:340c9ca6a36617084c6661bdc4f0fe92b7cda5a805d61673ec8db375fddc522b",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "command": [
+        "--config=/etc/otelcol-contrib/platform.yaml"
+      ],
+      "volumes": [
+        "./infrastructure/observability/collector.yaml:/etc/otelcol-contrib/platform.yaml:ro"
+      ],
+      "environment": {
+        "GOMEMLIMIT": "72MiB"
+      },
+      "mem_limit": "96m"
+    },
+    "postgres-exporter": {
+      "image": "prometheuscommunity/postgres-exporter:v0.20.1@sha256:ac5ec343104fae0e2d84a27bb8d69b38430a11910c5382cad85d478d2bab713e",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "environment": {
+        "DATA_SOURCE_URI": "postgres:5432/ledger_db?sslmode=disable&options=-csearch_path%3Dmonitoring%2Cpublic",
+        "DATA_SOURCE_USER": "platform_ops",
+        "DATA_SOURCE_PASS": "${PLATFORM_OPS_PASSWORD:?required}"
+      },
+      "command": [
+        "--collector.stat_statements",
+        "--collector.long_running_transactions",
+        "--collector.database_wraparound",
+        "--collector.postmaster"
+      ],
+      "mem_limit": "48m"
+    },
+    "kafka-exporter": {
+      "image": "danielqsj/kafka-exporter:v1.11.0@sha256:54d4296c5b8ce01232f6762e06cbc3eec25887c0b5c5940ccb9e891ac7fc51d8",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "command": [
+        "--kafka.server=kafka:9092",
+        "--kafka.version=3.9.1",
+        "--topic.filter=esep.*",
+        "--group.filter=esep.*",
+        "--refresh.metadata=10s"
+      ],
+      "mem_limit": "48m"
+    },
+    "redis-exporter": {
+      "image": "oliver006/redis_exporter:v1.97.0@sha256:f5f903fbe77571d455ede0453b084d6840bc62fc105efac001034421cab83b99",
+      "profiles": [
+        "monitoring"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "environment": {
+        "REDIS_ADDR": "redis://redis:6379",
+        "REDIS_PASSWORD": "${REDIS_PASSWORD:?required}"
+      },
+      "mem_limit": "32m"
+    }
+  },
+  "volumes": {
+    "platform-prometheus": {},
+    "platform-grafana": {},
+    "platform-loki": {}
+  }
+}

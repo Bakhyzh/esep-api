@@ -1,0 +1,26 @@
+apiVersion: 1
+# Remove only the obsolete source introduced by the initial local Phase G configuration.
+# Traces use the tested external Jaeger v2 UI link below.
+deleteDatasources:
+  - name: Jaeger
+    orgId: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      derivedFields:
+        - name: TraceID
+          matcherType: label
+          matcherRegex: '^trace_id$'
+          url: 'http://localhost:16686/trace/$${__value.raw}'

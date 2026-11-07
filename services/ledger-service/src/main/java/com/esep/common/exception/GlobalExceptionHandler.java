@@ -97,7 +97,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // the request itself is fine, it just lost a race, so the client may safely retry
     @ExceptionHandler(ConcurrencyFailureException.class)
     public ProblemDetail handleConcurrencyFailure(ConcurrencyFailureException ex) {
-        log.warn("Concurrency conflict: {}", ex.getMessage());
+        log.warn("Concurrency conflict type={}", ex.getClass().getSimpleName());
         return problem(HttpStatus.CONFLICT, "Concurrent modification",
                 "The resource was modified by another request, please retry", ErrorCode.CONCURRENT_MODIFICATION);
     }
@@ -105,7 +105,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     // last line of defense: a DB constraint caught what the service did not (unique key, check, FK)
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail handleDataIntegrity(DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getMessage());
+        log.warn("Data integrity violation: {}", ex.getMostSpecificCause().getClass().getSimpleName());
         // SQLSTATE class 22 (data exception: NUL byte, numeric overflow, date out of range) is also
         // translated to DataIntegrityViolationException, but it is a bad value, not a conflict:
         // a 409 tells the client that retrying might help, which it never will
@@ -120,7 +120,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception ex) {
         // log the details, but never leak stack traces / SQL to the client
-        log.error("Unexpected error", ex);
+        log.error("Unexpected error type={}", ex.getClass().getSimpleName());
         return problem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal error", "Unexpected error occurred",
                 ErrorCode.INTERNAL_ERROR);
     }

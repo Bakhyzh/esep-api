@@ -24,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnProperty(name = "esep.outbox.publisher-enabled", havingValue = "true", matchIfMissing = true)
 public class OutboxPublisher {
 
+    private com.esep.observability.TraceSupport trace;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void traceSupport(com.esep.observability.TraceSupport trace){this.trace=trace;}
     public static final String EVENT_ID_HEADER = "eventId";
     public static final String EVENT_TYPE_HEADER = "eventType";
 
@@ -54,7 +57,7 @@ public class OutboxPublisher {
         List<Long> published = new ArrayList<>();
         for (OutboxEvent event : batch) {
             try {
-                send(event);
+                if(trace==null)send(event);else trace.publish(event.traceParent(),()->send(event));
                 published.add(event.id());
             } catch (Exception e) {
                 if (e instanceof InterruptedException) {
@@ -62,8 +65,8 @@ public class OutboxPublisher {
                     Thread.currentThread().interrupt();
                 }
                 // Stop this batch on failure. Multiple publishers do not guarantee global commit order.
-                log.warn("Outbox event {} not published, will retry: {}", event.eventId(), e.toString());
-                outboxRepository.markFailed(event.id(), e.toString());
+                log.warn("Outbox event {} not published, will retry: {}", event.eventId(), e.getClass().getSimpleName());
+                outboxRepository.markFailed(event.id(), e.getClass().getSimpleName());
                 break;
             }
         }

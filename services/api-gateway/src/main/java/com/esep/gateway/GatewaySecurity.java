@@ -45,7 +45,7 @@ public class GatewaySecurity {
                 .logout(ServerHttpSecurity.LogoutSpec::disable)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .cors(c->c.configurationSource(source))
-                .authorizeExchange(a->a.pathMatchers("/actuator/health","/actuator/health/**").permitAll()
+                .authorizeExchange(a->a.pathMatchers("/actuator/prometheus","/actuator/health","/actuator/health/**").permitAll()
                         .pathMatchers("/api/**").hasAnyRole("USER","ADMIN").anyExchange().denyAll())
                 .oauth2ResourceServer(o->o.jwt(j->j.jwtAuthenticationConverter(jwt->
                         Mono.just(new JwtAuthenticationToken(jwt, authorities(jwt)))))).build();

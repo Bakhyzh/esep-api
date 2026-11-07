@@ -73,5 +73,6 @@ CI42239146949 success. After rebuilding User/Ledger with restricted-grant callba
 platform started healthy. Actual Keycloak → User → Kafka → Ledger → Notification /
 Analytics and real Chromium first-login/account/transfer/report/logout passed
 (10.3s test /12.6s runner), followed by successful financial invariant SQL.
-Safe diagnostics also executed with active application pools. Phase F publication/
-remote CI are pending at report creation.
+Safe diagnostics also executed with active application pools. Publication subsequently
+verified: c53eb8df912d7e3d36b51d67e3d46e3482909ec5 on origin/main;
+GitHub Actions CI42308685427 completed successfully, all eight jobs.

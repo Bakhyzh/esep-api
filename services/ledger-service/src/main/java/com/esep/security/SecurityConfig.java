@@ -18,7 +18,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/actuator/health", "/actuator/health/**", "/error", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers("/actuator/prometheus", "/actuator/health", "/actuator/health/**", "/error", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/internal/identity/**","/internal/ledger/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/deposits").hasRole("ADMIN")
                         .requestMatchers("/api/accounts/**", "/api/transfers", "/api/transactions/**").hasAnyRole("USER","ADMIN")

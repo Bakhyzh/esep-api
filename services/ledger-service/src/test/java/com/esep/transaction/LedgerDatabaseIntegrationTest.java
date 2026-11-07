@@ -68,7 +68,7 @@ class LedgerDatabaseIntegrationTest extends IntegrationTest {
         var tables=jdbc.queryForList("SELECT table_name FROM information_schema.tables WHERE table_schema='public'",String.class);
         assertThat(tables).contains("ledger_principals","ledger_identity_bindings","accounts","transactions","ledger_entries","outbox_events")
                 .doesNotContain("users","user_identities","notifications","processed_events","user_preferences");
-        assertThat(jdbc.queryForList("SELECT version FROM flyway_schema_history WHERE version IS NOT NULL",String.class)).containsExactly("1","2","3");
+        assertThat(jdbc.queryForList("SELECT version FROM flyway_schema_history WHERE version IS NOT NULL",String.class)).containsExactly("1","2","3","4");
     }
     @Test void databaseRejectsOrphansOverdraftAndConflictingMappings() {
         assertThatThrownBy(()->jdbc.update("INSERT INTO accounts(user_id,currency) VALUES (-12,'KZT')")).isInstanceOf(DataIntegrityViolationException.class);

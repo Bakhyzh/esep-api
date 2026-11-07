@@ -24,6 +24,10 @@ public class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
     KafkaContainer kafka() {
-        return new KafkaContainer(DockerImageName.parse("apache/kafka:3.9.1"));
+        // Docker Desktop can expose the copied starter before its write descriptor closes.
+        // Interpret the completed nonempty script instead of execve(script), which can fail ETXTBSY.
+        // This retains the actual broker, ports and original RUNNING readiness strategy.
+        return new KafkaContainer(DockerImageName.parse("apache/kafka:3.9.1"))
+                .withCommand("sh", "-c", "while [ ! -s /tmp/testcontainers_start.sh ]; do sleep 0.1; done; exec bash /tmp/testcontainers_start.sh");
     }
 }

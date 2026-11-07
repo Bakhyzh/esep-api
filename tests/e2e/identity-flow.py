@@ -72,7 +72,15 @@ def main():
     _,client,roles=helper['verify_configuration'](admin)
     request,check,passed=helper['request'],helper['check'],helper['passed'];urls=[]
     try:
-        people=[]
+        people=[];sessions={}
+        def refresh(person):
+            status,_,tokens=request('POST',helper['BASE']+'/realms/esep/protocol/openid-connect/token',
+                dict(grant_type='refresh_token',client_id='esep-web',refresh_token=sessions[person[1]]['refresh_token']),form=True)
+            check(status==200,'Standard OIDC fixture refresh failed')
+            tokens=json.loads(tokens)
+            check(isinstance(tokens,dict) and 'access_token' in tokens and 'refresh_token' in tokens,'Incomplete OIDC refresh response')
+            sessions[person[1]]=tokens
+            return (tokens['access_token'],person[1])
         for role in ('ADMIN','USER','USER'):
             name='platform-check-'+secrets.token_hex(8);password=secrets.token_urlsafe(32)
             status,headers,_=request('POST',helper['BASE']+'/admin/realms/esep/users',dict(username=name,
@@ -80,13 +88,14 @@ def main():
                 credentials=[dict(type='password',value=password,temporary=False)]),token=admin)
             check(status==201,'Temporary identity creation failed');url=headers['Location'];urls.append(url)
             check(request('POST',url+'/role-mappings/clients/'+client['id'],[roles[role]],token=admin)[0]==204,'Temporary role assignment failed')
-            token=helper['login']('esep','esep-web',helper['CALLBACK'],name,password)['access_token']
+            tokens=helper['login']('esep','esep-web',helper['CALLBACK'],name,password)
+            token=tokens['access_token']
             check(api(args.ledger_url,'/api/accounts',token)[0]==403,'Ledger accepted unknown identity')
             status,profile=api(args.user_url,'/api/auth/me',token)
             check(status==200 and profile['role']==role,'User authority provisioning failed')
             check(api(args.user_url,'/api/auth/me',token)[1]['id']==profile['id'],'Identity allocation was not repeatable')
             wait(lambda:api(args.ledger_url,'/api/accounts',token)[0]==200,'Identity event did not reach Ledger')
-            people.append((token,profile['id']))
+            people.append((token,profile['id']));sessions[profile['id']]=tokens
         operator,alice,bob=people
         status,a=api(args.ledger_url,'/api/accounts',alice[0],dict(currency='KZT'));check(status==201 and a['userId']==alice[1],'Ownership ID changed')
         status,b=api(args.ledger_url,'/api/accounts',bob[0],dict(currency='KZT'));check(status==201 and b['userId']==bob[1],'Recipient ownership ID changed')
@@ -98,6 +107,16 @@ def main():
         check(api(args.ledger_url,'/api/transfers',operator[0],transfer,secrets.token_hex(12))[0]==404,'ADMIN gained source ownership')
         check(api(args.ledger_url,'/api/accounts/'+str(a['id']),alice[0])[1]['balance']==Decimal('87.6544'),'Incorrect financial balance')
         passed('Real Keycloak -> automatic User provisioning -> transactional outbox -> Kafka -> Ledger projection; original allocated ID and money invariants preserved')
+        if GATEWAY:
+            # Real authenticated query and untrusted metadata must not reach telemetry as sensitive input.
+            probe=urllib.request.Request(GATEWAY+'/api/accounts?telemetry_canary=esep-private-telemetry-sentinel',
+                headers={'Authorization':'Bearer '+alice[0],'X-Correlation-ID':'esep-private-telemetry-sentinel',
+                         'baggage':'private=esep-private-telemetry-sentinel'})
+            with urllib.request.urlopen(probe,timeout=10) as response:
+                import uuid
+                check(response.status==200,'Authenticated telemetry privacy probe failed')
+                uuid.UUID(response.headers['X-Correlation-ID']);response.read()
+            passed('Authenticated query/baggage privacy canary sent; untrusted correlation ID replaced with UUID')
         if args.notification_url:
             wait(lambda:api(args.notification_url,'/api/notifications',operator[0])[0]==200,'Notification operator identity pending')
             def delivered(token):
@@ -167,6 +186,7 @@ def main():
         wait(reconciled,'Identity reconciliation mismatch')
         passed('Lifecycle disable/enable, idempotent snapshot replay and cross-service identity reconciliation passed')
         if args.replica_failures:
+            operator,alice,bob=[refresh(person) for person in (operator,alice,bob)]
             faults=runpy.run_path(str(ROOT/'tests/e2e/replica-failures.py'))
             faults['run'](ROOT,GATEWAY,alice,bob,a,b,api,wait,check,passed)
         if args.frontend_dir:
@@ -174,6 +194,9 @@ def main():
             frontend=args.frontend_dir.resolve()
             if json.loads((frontend/'package.json').read_text()).get('name')!='esep-web' or not (frontend/'e2e/platform.spec.ts').is_file():
                 raise RuntimeError('Expected the verified esep-web platform test repository')
+            operator=refresh(operator)
+            # Provider admin access tokens can expire during real broker/replica fault checks.
+            admin=helper['admin_login'](env)
             name='platform-browser-'+secrets.token_hex(8);password=secrets.token_urlsafe(32)
             status,headers,_=request('POST',helper['BASE']+'/admin/realms/esep/users',dict(username=name,
                 enabled=True,firstName='Local',lastName='Browser',email=name+'@example.invalid',emailVerified=True,

@@ -1,0 +1,14 @@
+{
+  "services": {
+    "ledger-2": {
+      "profiles": [
+        "scaling"
+      ]
+    },
+    "prometheus": {
+      "volumes": [
+        "./infrastructure/observability/prometheus-compact.yaml:/etc/prometheus/prometheus.yaml:ro"
+      ]
+    }
+  }
+}

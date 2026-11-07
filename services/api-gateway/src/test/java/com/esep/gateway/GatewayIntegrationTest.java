@@ -135,9 +135,9 @@ class GatewayIntegrationTest {
     @Test void routesPreserveBearerAndCompatibilityWithoutTrustingUserHeaders()throws Exception{
         String jwt=valid("USER",UUID.randomUUID().toString());
         for(String path:List.of("/api/auth/me","/api/accounts","/api/transactions","/api/analytics/spending","/api/notifications")){
-            var result=call(path,jwt,"GET",Map.of("X-User-Id","99","X-Correlation-ID","safe-test-id"));
+            var result=call(path,jwt,"GET",Map.of("X-User-Id","99","X-Correlation-ID","b326c6d4-3753-4c45-a031-ebfb941f64fc"));
             assertThat(result.status()).isEqualTo(200);assertThat(result.body()).contains("backend");
-            assertThat(result.headers().getFirst("X-Correlation-ID")).isEqualTo("safe-test-id");
+            assertThat(result.headers().getFirst("X-Correlation-ID")).isEqualTo("b326c6d4-3753-4c45-a031-ebfb941f64fc");
             assertThat(FORGED_HEADER.get()).isFalse();assertThat(BEARER_PRESENT.get()).isTrue();
         }
         assertThat(call("/api/transfers",jwt,"POST",Map.of("Idempotency-Key",UUID.randomUUID().toString())).status()).isEqualTo(201);

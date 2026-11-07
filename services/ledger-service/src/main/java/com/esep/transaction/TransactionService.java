@@ -49,7 +49,7 @@ public class TransactionService {
         // not every integrity error is a key race (e.g. a CHECK constraint): replay only if the key exists now
         TransactionResult result = processor.findReplay(currentUser, idempotencyKey, requestHash)
                 .orElseThrow(() -> e);
-        log.info("Idempotency-Key race resolved by replay, key={}", idempotencyKey);
+        log.info("Idempotency race resolved by replay");
         return result;
     }
 }

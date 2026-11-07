@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+rule_files: [/etc/prometheus/alerts.yaml]
+scrape_configs:
+  - job_name: esep
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['user:8083', 'ledger:8082', 'ledger-2:8082', 'notification:8084', 'analytics:8085', 'gateway:8080', 'gateway-2:8080']
+  - job_name: postgres
+    static_configs: [{targets: ['postgres-exporter:9187']}]
+  - job_name: kafka
+    static_configs: [{targets: ['kafka-exporter:9308']}]
+  - job_name: redis
+    static_configs: [{targets: ['redis-exporter:9121']}]

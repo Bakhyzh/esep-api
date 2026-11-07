@@ -1,14 +1,15 @@
 # ---- build stage: full JDK + Maven, thrown away after the build ----
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
+ENV MAVEN_OPTS="-Xmx384m -XX:ActiveProcessorCount=2"
 
 # dependencies first: this layer is cached until pom.xml changes
 COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
+RUN --mount=type=cache,id=esep-maven-21,target=/root/.m2,sharing=locked mvn -B -q dependency:go-offline
 
 COPY src ./src
 # tests need Docker (Testcontainers) and run in CI, not inside the image build
-RUN mvn -B -q -DskipTests package && cp target/user-service-*.jar app.jar
+RUN --mount=type=cache,id=esep-maven-21,target=/root/.m2,sharing=locked mvn -B -q -DskipTests package && cp target/user-service-*.jar app.jar
 
 # ---- runtime stage: JRE only, ~4x smaller than the build image ----
 FROM eclipse-temurin:21-jre-alpine

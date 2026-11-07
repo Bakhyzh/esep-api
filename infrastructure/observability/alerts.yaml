@@ -1,0 +1,47 @@
+groups:
+  - name: esep
+    rules:
+      - alert: ServiceScrapeUnavailable
+        expr: up == 0
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: 'A monitored target cannot be scraped'}
+      - alert: ApiServerErrors
+        expr: sum by (application) (rate(http_server_requests_seconds_count{status=~"5.."}[5m])) / clamp_min(sum by (application) (rate(http_server_requests_seconds_count[5m])), 0.001) > 0.05
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: 'API server error ratio above five percent'}
+      - alert: OutboxNotDraining
+        expr: esep_outbox_oldest_seconds > 60 and esep_outbox_backlog > 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: 'Committed events have waited for publication more than one minute'}
+      - alert: OutboxMetricsUnavailable
+        expr: esep_outbox_metrics_up == 0
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: 'Outbox database polling failed'}
+      - alert: HikariPoolSaturated
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.9
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: 'Application database pool above ninety percent'}
+      - alert: KafkaConsumerLag
+        expr: sum by (consumergroup) (kafka_consumergroup_lag) > 100
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: 'Kafka projection group is behind'}
+      - alert: KafkaDeadLetterDelivery
+        expr: sum by (application) (increase(esep_kafka_dead_letters_total[5m])) > 0
+        labels: {severity: warning}
+        annotations: {summary: 'An event required dead letter handling'}
+      - alert: RedisUnavailable
+        expr: redis_up == 0
+        for: 30s
+        labels: {severity: warning}
+        annotations: {summary: 'Redis unavailable; cache falls back, Gateway rejects writes'}
+      - alert: AuthenticationFailures
+        expr: sum by (application) (rate(http_server_requests_seconds_count{status=~"401|403"}[5m])) > 1
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: 'Sustained authentication or authorization failures'}

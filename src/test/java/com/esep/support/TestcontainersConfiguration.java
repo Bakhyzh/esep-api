@@ -30,6 +30,9 @@ public class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
     KafkaContainer kafka() {
-        return new KafkaContainer(DockerImageName.parse("apache/kafka:3.9.1"));
+        // Avoid execve on a starter still open for copy in Docker Desktop (ETXTBSY).
+        // Keep the real broker and original Kafka RUNNING readiness check.
+        return new KafkaContainer(DockerImageName.parse("apache/kafka:3.9.1"))
+                .withCommand("sh", "-c", "while [ ! -s /tmp/testcontainers_start.sh ]; do sleep 0.1; done; exec bash /tmp/testcontainers_start.sh");
     }
 }

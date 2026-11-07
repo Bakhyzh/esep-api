@@ -18,13 +18,26 @@ def run(root,edge,alice,bob,source,recipient,api,wait,check,passed):
         raise RuntimeError('Replica fault tests require the isolated loopback edge')
     platform=['docker','compose','-p','esep-platform-local','-f',str(root/'compose.platform.yaml'),'--env-file',str(root/'.env.platform')]
     # Refuse faults unless the exact targets belong to the isolated platform project.
+    identifiers={}
     for service in ('gateway','ledger'):
         identifier=subprocess.check_output(platform+['ps','-q',service],text=True).strip()
         if not identifier:raise RuntimeError('Expected live synthetic replica')
+        identifiers[service]=identifier
         model=json.loads(subprocess.check_output(['docker','inspect',identifier],text=True))[0]
         labels=model['Config']['Labels']
         if labels.get('com.docker.compose.project')!='esep-platform-local' or labels.get('com.docker.compose.service')!=service:
             raise RuntimeError('Refusing to fault an unrelated container')
+
+    def restore(service):
+        # Restart the same verified image/environment. Poll readiness without exhausting API rate limits.
+        subprocess.run(['docker','start',identifiers[service]],check=True,stdout=subprocess.DEVNULL)
+        deadline=time.monotonic()+120
+        while time.monotonic()<deadline:
+            state=subprocess.check_output(['docker','inspect','--format','{{.State.Status}} {{.State.Health.Status}}',identifiers[service]],text=True).strip()
+            if state=='running healthy':return
+            if not state.startswith('running '):raise RuntimeError('Replica exited during recovery')
+            time.sleep(1)
+        raise RuntimeError('Replica readiness did not recover within120 seconds')
 
     def probe():
         request=urllib.request.Request(edge+'/api/accounts',headers={'Authorization':'Bearer '+alice[0]})
@@ -61,7 +74,8 @@ def run(root,edge,alice,bob,source,recipient,api,wait,check,passed):
             check(any(x[0]==200 and x[1]=='gateway-2' for x in results),'Remaining Gateway handled no live traffic')
             passed('Gateway killed during50 reads; observed HTTP statuses '+str(dict(Counter(x[0] for x in results))))
         finally:
-            subprocess.run(platform+['up','-d','--no-build','--wait','gateway'],check=True,stdout=subprocess.DEVNULL)
+            # Start the same verified container: preserve monitoring/auth overrides and image.
+            restore('gateway')
     wait(both,'Gateway recovery did not restore balanced service',40)
 
     source_path='/api/accounts/'+str(source['id']);recipient_path='/api/accounts/'+str(recipient['id'])
@@ -98,7 +112,7 @@ def run(root,edge,alice,bob,source,recipient,api,wait,check,passed):
         check(api(edge,recipient_path,bob[0])[1]['balance']==other+expected,'Recipient balance lost conservation under replica failure')
         passed('Ledger killed during40 concurrent duplicate requests /8 keys; statuses '+str(dict(Counter(statuses)))+'; all8 settled exactly once, conservation0.0008 verified')
     finally:
-        subprocess.run(platform+['up','-d','--no-build','--wait','ledger'],check=True,stdout=subprocess.DEVNULL)
+        restore('ledger')
     wait(both,'Ledger recovery did not restore balanced service',40)
     subprocess.run(platform+['exec','-T','postgres','psql','-X','-U','platform_bootstrap','-d','ledger_db'],
         input=(root/'tests/financial/ledger-invariants.sql').read_text(),text=True,check=True)

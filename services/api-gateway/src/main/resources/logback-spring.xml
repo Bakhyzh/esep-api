@@ -1,0 +1,18 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/structured-console-appender.xml"/>
+    <springProfile name="observability">
+        <appender name="OTEL" class="io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender">
+            <captureKeyValuePairAttributes>true</captureKeyValuePairAttributes>
+            <captureArguments>false</captureArguments>
+            <captureCodeAttributes>false</captureCodeAttributes>
+            <captureMdcAttributes>traceId,spanId</captureMdcAttributes>
+        </appender>
+    </springProfile>
+    <springProfile name="observability">
+        <root level="INFO"><appender-ref ref="CONSOLE"/><appender-ref ref="OTEL"/></root>
+    </springProfile>
+    <springProfile name="!observability">
+        <root level="INFO"><appender-ref ref="CONSOLE"/></root>
+    </springProfile>
+</configuration>

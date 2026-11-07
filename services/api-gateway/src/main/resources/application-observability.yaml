@@ -1,0 +1,29 @@
+management:
+  tracing:
+    export:
+      enabled: true
+      otlp.enabled: true
+    sampling.probability: ${TRACING_SAMPLE_PROBABILITY:1.0}
+  opentelemetry:
+    enabled: true
+    resource-attributes:
+      service.name: ${spring.application.name}
+      service.instance.id: ${HOSTNAME:local}
+      deployment.environment.name: local
+    tracing.export.otlp.endpoint: http://otel-collector:4318/v1/traces
+    logging:
+      export:
+        schedule-delay: 1s
+        max-queue-size: 256
+        max-batch-size: 64
+        otlp.endpoint: http://otel-collector:4318/v1/logs
+  logging.export.otlp.enabled: true
+spring:
+  reactor.context-propagation: auto
+  kafka:
+    listener.observation-enabled: true
+    template.observation-enabled: true
+logging.level:
+  org.springframework.kafka.listener: "OFF"
+  org.hibernate.orm.jdbc.error: "OFF"
+  org.hibernate.engine.jdbc.spi.SqlExceptionHelper: "OFF"

@@ -13,14 +13,15 @@ import java.util.UUID;
 public class OutboxRepository {
 
     private final JdbcTemplate jdbc;
+    private final com.esep.observability.TraceSupport trace;
 
     /** Must be called inside the business transaction: that is the whole point of the outbox. */
     public void append(UUID eventId, String aggregateType, long aggregateId, String eventType,
                        String messageKey, String payloadJson) {
         jdbc.update("""
-                INSERT INTO outbox_events (event_id, aggregate_type, aggregate_id, event_type, message_key, payload)
-                VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb))
-                """, eventId, aggregateType, aggregateId, eventType, messageKey, payloadJson);
+                INSERT INTO outbox_events (event_id, aggregate_type, aggregate_id, event_type, message_key, payload, trace_parent)
+                VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb), ?)
+                """, eventId, aggregateType, aggregateId, eventType, messageKey, payloadJson, trace.capture());
     }
 
     /**
@@ -29,7 +30,7 @@ public class OutboxRepository {
      */
     public List<OutboxEvent> lockNextBatch(int limit) {
         return jdbc.query("""
-                SELECT id, event_id, event_type, message_key, payload::text AS payload
+                SELECT id, event_id, event_type, message_key, payload::text AS payload, trace_parent
                 FROM outbox_events
                 WHERE published_at IS NULL
                 ORDER BY id
@@ -40,7 +41,7 @@ public class OutboxRepository {
                 rs.getObject("event_id", UUID.class),
                 rs.getString("event_type"),
                 rs.getString("message_key"),
-                rs.getString("payload")), limit);
+                rs.getString("payload"),rs.getString("trace_parent")), limit);
     }
 
     public void markPublished(List<Long> ids) {
@@ -53,6 +54,7 @@ public class OutboxRepository {
                 error, id);
     }
 
-    public record OutboxEvent(long id, UUID eventId, String eventType, String messageKey, String payload) {
+    public record OutboxEvent(long id, UUID eventId, String eventType, String messageKey, String payload,String traceParent) {
+        public OutboxEvent(long id,UUID eventId,String eventType,String messageKey,String payload){this(id,eventId,eventType,messageKey,payload,null);}
     }
 }
