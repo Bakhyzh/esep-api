@@ -6,6 +6,7 @@ import os
 import secrets
 import subprocess
 import time
+import traceback
 from ops_common import local_daemon,run
 
 IMAGE='postgres:17.11-alpine@sha256:562a6e0a66b5136bc28bef5944bbc2ddddf8ea0058d4016b96cee63f2edaf143'
@@ -32,7 +33,7 @@ def main():
     def sql(container,query):
         return run(['docker','exec','-i',container,'psql','-X','-A','-t','-q','-v','ON_ERROR_STOP=1','-U','lab_owner','-d','postgres'],data=query.encode()).decode().strip()
     def healthy(container):
-        return subprocess.run(['docker','exec',container,'pg_isready','-U','lab_owner'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+        return subprocess.run(['docker','exec',container,'pg_isready','-h','127.0.0.1','-U','lab_owner'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
     def launch(name,mounts,extra):
         command=['docker','run','-d','--name',name,'--network','none','--memory','256m','--cpus','1',
                  '--label','esep.scope=synthetic-pitr','--label','esep.lab='+identity,'-e','POSTGRES_PASSWORD','-e','POSTGRES_USER=lab_owner']
@@ -78,4 +79,7 @@ touch /backup/recovered/recovery.signal
 if __name__=='__main__':
     try:main()
     except Exception as error:
-        print('FAIL: '+(str(error) if isinstance(error,RuntimeError) else type(error).__name__));raise SystemExit(1)
+        print('FAIL: '+(str(error) if isinstance(error,RuntimeError) else type(error).__name__))
+        for frame in traceback.extract_tb(error.__traceback__):
+            print('  at '+os.path.basename(frame.filename)+':'+str(frame.lineno)+' '+frame.name)
+        raise SystemExit(1)

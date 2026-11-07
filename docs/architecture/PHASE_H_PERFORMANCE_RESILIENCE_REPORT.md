@@ -130,3 +130,17 @@ window; do not drop databases or migrations. Stop optional fault/performance too
 restore any paused telemetry containers and verify readiness/invariants before use.
 Phase I remains responsible for broker authentication/ACLs, comprehensive end-to-end
 CI, production-oriented configuration, image/security checks and final documentation.
+
+### CI follow-up
+
+Initial feature69cfc70253e6aa2a352a750dbfe489d55d316f7a / run42355620767:
+9 of10 jobs passed, including root Maven verify, all five services, performance
+contracts and observability. Operations role/encryption tests passed, but the PITR
+step failed with a protected generic Docker error; this run was not accepted.
+Inspection found a readiness race: Unix-socket pg_isready can accept the image's
+initialization-only temporary server. The lab now requires TCP readiness of the
+final server and emits safe filename/line diagnostics without SQL or credentials.
+The original generic failure's exact cause is unproven. Real isolated PITR rerun
+passed:9.255seconds, pg_verifybackup passed, recovered only `keep`, excluded the
+post-target transaction; all new lab volumes retained, financial DBs never accessed.
+Main integration awaits a complete green follow-up CI run.
