@@ -13,10 +13,14 @@ if not re.fullmatch(r'[A-Za-z0-9_./:@-]+',args.image):raise SystemExit('Invalid 
 args.output_dir.mkdir(parents=True,exist_ok=True);destination=args.output_dir.resolve();name=args.image.replace('/','_').replace(':','_')
 with tempfile.TemporaryDirectory(prefix='esep-image-scan-') as directory:
     source=Path(directory);image=json.loads(subprocess.check_output(['docker','image','inspect',args.image]))[0]
-    retained=subprocess.check_output(['docker','ps','-aq','--filter','label=esep.verified-image='+image['Id']],text=True).strip()
-    if not retained:
+    retained=subprocess.check_output(['docker','ps','-aq','--filter','label=esep.verified-image='+image['Id']],text=True).split()
+    models=json.loads(subprocess.check_output(['docker','inspect',*retained])) if retained else []
+    if not any(not any(k.startswith('com.docker.compose.') and v for k,v in m['Config'].get('Labels',{}).items()) for m in models):
+        # Compose embeds project/service labels into built images. Inheriting them
+        # would make this stopped retainer masquerade as a business-service replica.
+        isolated_labels=[arg for key in (image['Config'].get('Labels') or {}) if key.startswith('com.docker.compose.') for arg in ['--label',key+'=']]
         subprocess.run(['docker','create','--label','esep.scope=verification-artifact','--label','esep.verified-image='+image['Id'],
-            '--network','none','--entrypoint','sh',image['Id'],'-c','exit 0'],check=True,stdout=subprocess.DEVNULL)
+            *isolated_labels,'--network','none','--entrypoint','sh',image['Id'],'-c','exit 0'],check=True,stdout=subprocess.DEVNULL)
     subprocess.run(['docker','save','-o',str(source/'image.tar'),image['Id']],check=True)
     archive=source/'image.tar'
     # Linux honours the host UID and mode inside bind mounts even for container
