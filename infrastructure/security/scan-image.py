@@ -18,12 +18,19 @@ with tempfile.TemporaryDirectory(prefix='esep-image-scan-') as directory:
         subprocess.run(['docker','create','--label','esep.scope=verification-artifact','--label','esep.verified-image='+image['Id'],
             '--network','none','--entrypoint','sh',image['Id'],'-c','exit 0'],check=True,stdout=subprocess.DEVNULL)
     subprocess.run(['docker','save','-o',str(source/'image.tar'),image['Id']],check=True)
-    digest=hashlib.file_digest((source/'image.tar').open('rb'),'sha256').hexdigest()
+    archive=source/'image.tar'
+    # Linux honours the host UID and mode inside bind mounts even for container
+    # root when CAP_DAC_OVERRIDE is dropped. Bind individual public-artifact files;
+    # never relax access to the private temporary directory or mount the workspace.
+    archive.chmod(0o444)
+    scanned=source/'report.json';scanned.touch();scanned.chmod(0o666)
+    with archive.open('rb') as stream:digest=hashlib.file_digest(stream,'sha256').hexdigest()
     result=subprocess.run(['docker','run','--rm','--cap-drop','ALL','--security-opt','no-new-privileges:true',
         '--memory','768m','--cpus','2','-e','TRIVY_SKIP_VERSION_CHECK=true',
-        '-v',str(source)+':/input:ro','-v',str(destination)+':/results','-v','esep-security-cache:/cache',SCANNER,
+        '-v',str(archive)+':/input/image.tar:ro','-v',str(scanned)+':/results/report.json','-v','esep-security-cache:/cache',SCANNER,
         '--cache-dir','/cache','image','--input','/input/image.tar','--scanners','vuln','--parallel','2','--timeout','10m',
-        '--format','json','--output','/results/'+name+'.json'],check=True)
+        '--format','json','--output','/results/report.json'],check=True)
+    (destination/(name+'.json')).write_bytes(scanned.read_bytes())
 report=json.loads((destination/(name+'.json')).read_text())
 if report['Metadata']['DiffIDs']!=image['RootFS']['Layers']:raise RuntimeError('Scanned filesystem differs from exported image')
 (destination/(name+'.provenance.json')).write_text(json.dumps({'dockerImageId':image['Id'],'diffIds':image['RootFS']['Layers'],'exportSha256':digest},indent=2)+'\n')
