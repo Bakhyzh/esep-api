@@ -300,7 +300,7 @@ jobs:
         run: |
           python3 infrastructure/security/scan-image.py --image esep-platform-kafka:local --output-dir /tmp/security-infra
           python3 infrastructure/security/scan-image.py --image quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b --output-dir /tmp/security-infra
-          python3 infrastructure/security/scan-image.py --image postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac --output-dir /tmp/security-infra
+          python3 infrastructure/security/scan-image.py --image esep-platform-postgres:local --output-dir /tmp/security-infra
           python3 infrastructure/security/scan-image.py --image redis:7-alpine@sha256:c5d34a98396a4775e223c74e929162c35c5a2182901ba26b50ade939941ce14b --output-dir /tmp/security-infra
           python3 infrastructure/security/scan-image.py --image nginx:1.30.6-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311 --output-dir /tmp/security-infra
       - name: Real producer identity/financial topic ACL boundaries

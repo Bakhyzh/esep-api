@@ -1,0 +1,5 @@
+# Same verified17.11 engine/data format; patched privilege-drop helper and OS libraries.
+# Built by platform.py before startup. Does not select/migrate any identity database.
+services:
+  keycloak-db:
+    image: esep-platform-postgres:local

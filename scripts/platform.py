@@ -71,9 +71,9 @@ def main():
         dc+=['--profile','dashboards']
     command(dc+['config','-q'])
     if args.action=='build':
-        for service in ('kafka','user','ledger','notification','analytics','gateway','web'):command(dc+['build',service])
+        for service in ('postgres','kafka','user','ledger','notification','analytics','gateway','web'):command(dc+['build',service])
         return
-    kc=['docker','compose','--project-name','esep-identity-dev','--project-directory',str(identity),'--env-file',str(identity/'.env'),'-f',str(identity/'compose.yaml'),'-f',str(ROOT/'infrastructure/platform/compose.identity-m1.yaml')]
+    kc=['docker','compose','--project-name','esep-identity-dev','--project-directory',str(identity),'--env-file',str(identity/'.env'),'-f',str(identity/'compose.yaml'),'-f',str(ROOT/'infrastructure/platform/compose.identity-m1.yaml'),'-f',str(ROOT/'infrastructure/platform/compose.identity-postgres.yaml')]
     secure=ROOT/'.env.identity-secure'
     if secure.exists():
         ops.environment(secure);kc+=['--env-file',str(secure),'-f',str(ROOT/'infrastructure/platform/compose.identity-security.yaml')]
