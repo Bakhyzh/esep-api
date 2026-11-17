@@ -1,7 +1,7 @@
 # Autonomous master execution status
 
-The master task continues through phases A–I. This file is a progress ledger, not
-an assertion that the entire platform is complete or production-ready.
+Phases A–I of the local platform are implemented, verified and published. This
+ledger does not approve real customer operation or production deployment.
 
 | Phase | Current verified state |
 |---|---|
@@ -13,11 +13,12 @@ an assertion that the entire platform is complete or production-ready.
 | F DBA/DR | Implemented locally; 4 real role/Flyway/timeout tests and 4 age/artifact tests; authenticated4/5DB backups and restricted row/sequence-exact restores; physical named-point PITR verified; actual12-container restart, real browser/API regression and financial invariants passed; published c53eb8df912d7e3d36b51d67e3d46e3482909ec5; CI42308685427 all8 success |
 | G Observability | Implemented/locally verified: compact9-target metrics,19 Grafana panels, Loki logs, two continuous money traces/privacy; real browser/broker/replica tests pass; two-Ledger scaling tested separately with UI paused for4-GB VM; published main5054eb2e4e22f63bf057e1558662c201fcb7e3e5; CI42352264110 all9 success |
 | H Performance/resilience | Locally verified: nine real k6 workloads, actual Docker k6 baseline, all six controlled fault groups pass; exact conservation/SQL/Kafka reconciliation; pool starvation and harness findings fixed; published main14b23f0e1d83c97a772d3153a0e194aaf7dea77f; CI42355856981 all10 success, remote SHA verified |
-| I Hardening/CI | In progress: broker SASL/ACL boundaries, persistent Kafka path audit and verified encrypted472-file preservation; production guards/full-stack CI/image scans/documentation remain |
+| I Hardening/CI | Published source ffbdc6ae53cc483bcf4ceef55bc3e9885567c771; feature CI44126587328 all12 success; main workflow44128575834 all12 verification plus GHCR image success, production deployment skipped; remote SHA verified. See FINAL_ESEP_IMPLEMENTATION_REPORT.md for evidence and remaining production gates |
 
 Workspace: /Users/bakhytzharqynbek/Downloads/esep-platform. Separate original
 worktrees/untracked db-lab and seven architecture documents remain unchanged.
-The existing clean main worktree is /private/tmp/esep-api-phase21-main-20261106.
+The former temporary main checkout was removed outside this rollout; publication
+uses a clean detached checkout at /Users/bakhytzharqynbek/Downloads/esep-platform-publication.
 No subagents; rtk unavailable. Do not use reset/force push/deletion of volumes.
 
 All new development data uses compose.platform.yaml, project esep-platform-local,
@@ -41,13 +42,13 @@ Testcontainers leave no enduring business data. Existing monolith V1–V8 remain
 byte-for-byte unchanged. Documentation-only progress statements must remain honest
 about later phases until their actual tests and real stack checks are executed.
 
-Next after Phase G publication: execute bounded synthetic k6 workloads with real
-Keycloak actors, actual telemetry measurements and controlled isolated faults. Reuse
-the existing replica recovery tests and verify SQL invariants after each load/fault.
-Then complete broker producer authentication/ACLs, full-stack CI/E2E, production
-configuration and accurate final architecture/run/limitations documentation.
+Phases G/H ran the bounded synthetic k6 workloads, actual telemetry and controlled
+faults with financial reconciliation. Phase I ran complete PKCE/browser/API checks,
+five-database encrypted backup/row-exact restore, broker replacement/ACL checks and
+runtime scanning. The final CI and publication receipts are tracked in the final
+report; failed attempts are retained as failures, not relabelled PASS.
 
-Production gates remain: real ID/data migration approval, broker TLS/producer ACLs,
+Production gates remain: real ID/data migration approval, external broker TLS/ACL operations,
 independent backup custody/storage and deployment-specific recovery drills, traffic
 switching and separate security/operational review. Local restricted-role and
 backup/restore/PITR verification passed in Phase F; this does not prove production DR.

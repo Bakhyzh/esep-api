@@ -149,3 +149,7 @@ Previous verified backend main: c53eb8df912d7e3d36b51d67e3d46e3482909ec5;
 frontend: a70afab85289b299fe49f481fc909b999d25faf6. No production deployment.
 
 Publication receipt: final CI also executed the added request-log regression tests: Ledger93, User6, Notification7, Analytics12, Gateway8; monolith248 with one opt-in live skip. All completed successfully.
+
+Publication subsequently verified:5054eb2e4e22f63bf057e1558662c201fcb7e3e5 on
+origin/main; CI42352264110 completed successfully, all9 jobs. Later performance
+and hardening results are recorded in their phase reports and the final report.

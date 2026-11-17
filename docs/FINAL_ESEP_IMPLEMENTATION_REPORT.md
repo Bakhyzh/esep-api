@@ -1,7 +1,8 @@
 # ESEP implementation and verification report
 
-Local implementation is complete in the working branch; final CI/publication receipt
-is pending. This report does not approve real customer operation or production traffic.
+The local implementation passed all12 CI jobs, was published to main and passed
+the complete main pipeline. Its server-deployment job was deliberately skipped.
+This report does not approve real customer operation or production traffic.
 
 ## Architecture and ownership
 
@@ -50,6 +51,36 @@ The provider HIGH findings included OpenJDK, SQLite and Guava; no blanket suppre
 was added. Current CI re-evaluates actual runtime images against the available DB.
 Residual findings require production remediation/review, not a readiness claim.
 
+The refreshed local scan on2026-11-17 found0 critical/0 high in Gateway and
+patched Kafka, but0 critical/6 high in Keycloak26.8.2 (43 medium). The increase
+from the historical four is new SQLite advisories, not a scan suppression.
+
+| Remaining provider HIGH | Package | Scanner-listed fix |
+|---|---|---|
+| CVE-2026-91403 | java-21-openjdk-headless21.0.13.0.9-1.2.el9 | Not listed |
+| CVE-2026-119373 /119374 /119379 /119586 | sqlite-libs3.34.1-11.el9_8 | Not listed |
+| CVE-2026-102554 | guava33.6.0-jre |33.7.2 |
+
+Production remains gated on an upstream/provider image update and reviewed
+remediation; no unsupported provider JAR replacement or severity waiver was used.
+The pinned Nginx image also has three HIGH libxslt findings:
+CVE-2026-125350, CVE-2026-87636 and CVE-2026-9947, fixed in1.1.43-r4.
+These remain explicit production remediation work, including the pinned frontend
+runtime image; the critical-only CI policy does not assert absence of HIGH findings.
+The local Redis image reports0 critical/0 high/1 medium, but its Alpine3.21 base
+is end-of-support according to the scanner. Absence of advisories is insufficient
+for production approval; provision a supported external Redis/TLS deployment.
+
+CI44118726609 correctly stopped on the original PostgreSQL image's critical
+Go-runtime CVE-2025-68121 in gosu, plus44 HIGH findings. The derivative keeps
+PostgreSQL17.11 and rebuilds upstream gosu1.20 with pinned Go1.27.4 and
+x/sys0.44.0; krb5-libs1.22.3-r0/libxslt1.1.43-r4 close OS advisories. Its
+actual refreshed scan reports0 findings at every severity, including UNKNOWN.
+Both local database containers use this image and run PostgreSQL as UID70.
+After a new authenticated five-database backup, all rows/sequences matched exactly
+after replacement. ICU78.1-r0 and musl1.2.6-r3 match both previous containers.
+No PostgreSQL engine upgrade, identity schema downgrade or financial migration ran.
+
 Production-only guards reject unsafe TLS/CORS/DB options and schema mutation.
 Separate MigrateDatabase entry points start no HTTP server, consumer or publisher.
 Production Compose requires external secrets/certificates, runtime/migrator role
@@ -60,16 +91,21 @@ TLS1.2/1.3, CA rejection and Host rejection. No production business stack was st
 
 - Complete patched Maven verify on2026-11-07: User23, Ledger115, Notification27,
   Analytics34, Gateway18, DBA4, monolith248 with one opt-in live skip; no failures.
-  Final CI verifies the publication revision again.
+  Final12-job CI44126587328 repeated verification successfully on2026-11-17.
 -2026-11-17: protected image builds, private startup and actual Keycloak client
   validation passed; full API/browser PKCE, provisioning, transfer, notification,
   analytics, replay/backfill/reconciliation, broker outage/recovery and logout passed.
   Chromium6.3s / runner9.0s. Temporary provider identities removed; audit retained.
+  After the PostgreSQL helper/library fixes and retainer isolation, the complete
+  API/browser/broker-recovery flow passed again: Chromium7.8s / runner9.5s.
 - Actual contracts validated1000 current committed events:500 identity,196 transfer,
   54 account and250 posting payloads, without logging their contents.
 - Real producer-denial probes and unauthenticated broker metadata denial passed.
   Broker recreation/upgrade tests preserved36 business partition offsets and18
   numeric committed group positions; uncommitted '-' assignments are not counted.
+  Actual container recreation was repeated successfully on2026-11-17. The
+  authenticated read-only Kafka exporter then collected36 partition-offset,
+  18 consumer-offset and18 lag series from the upgraded broker.
 - Seven actual encryption/retention/provider-selection unit tests passed on2026-11-17.
 - Authenticated backup of all five current databases:36.503s. Restricted isolated
   restore verification:19.774s; every table/sequence fingerprint matched. Restored
@@ -108,6 +144,22 @@ publication on source pushes is retained; no public server deployment was run.
 Documentation-only receipts use dedicated link/secret checks and do not rebuild or
 publish unchanged runtime images.
 
+Initial Phase I CI44118161009 failed because CAP_DAC_OVERRIDE removal exposed
+Linux bind-mount permissions in the isolated scanner. The scanner now mounts
+individual public-artifact files from a private directory, without workspace or
+Docker-socket access. Its actual local scan passed; the complete CI was restarted.
+CI44122457296 then exposed inherited Compose labels on never-started image
+retainers. Those labels are cleared before creation so retained images cannot
+masquerade as business replicas. Real service selection/ACL/E2E checks remain
+mandatory; no failing security gate was disabled.
+CI44124151432 subsequently failed an administrative Kafka command before the
+financial E2E. No diagnostic cause was exposed by its protected subprocess helper,
+so the exact cause is unproven. Administrative checks now report only allowlisted
+exception classes and broker termination/OOM state, allow15-second metadata/group
+deadlines and96MiB CLI heap. The broker cgroup permits768MiB for its JVM plus
+health/admin JVM bursts; it does not reserve that memory continuously. Actual local
+ACL checks and broker recreation passed again with unchanged offsets/groups.
+
 | Published phase | Backend SHA | Successful CI run |
 |---|---|---|
 | A | 0a8781de91f05f935d89d66cb65e1da2aa132c4b |42218237669 |
@@ -118,11 +170,33 @@ publish unchanged runtime images.
 | F | c53eb8df912d7e3d36b51d67e3d46e3482909ec5 |42308685427 |
 | G | 5054eb2e4e22f63bf057e1558662c201fcb7e3e5 |42352264110 |
 | H |14b23f0e1d83c97a772d3153a0e194aaf7dea77f |42355856981 |
+| I |ffbdc6ae53cc483bcf4ceef55bc3e9885567c771 |44126587328: all12 jobs success |
 
 Frontend a70afab85289b299fe49f481fc909b999d25faf6 is independently published and
-pinned; its prior CI42239146949 passed. Phase I source SHA/CI/main confirmation
-will be appended after actual publication. A documentation receipt necessarily
-follows its verified code commit; the final remote ref is also reported to the user.
+pinned; its prior CI42239146949 passed. Phase I source was fast-forward integrated
+and pushed to origin/main; git ls-remote confirmed
+ffbdc6ae53cc483bcf4ceef55bc3e9885567c771 on2026-11-17. No force push, public
+deployment or financial data migration ran. The separate
+[main workflow44128575834](https://github.com/Bakhyzh/esep-api/actions/runs/44128575834)
+completed successfully: all12 verification jobs and the retained monolith GHCR
+image job passed; the production server deployment was skipped. The
+[feature CI44126587328](https://github.com/Bakhyzh/esep-api/actions/runs/44126587328)
+also passed all12 jobs on exactly the same source SHA. Documentation workflow
+44128575649 passed. Frontend origin/main was rechecked and remains the pinned
+a70afab85289b299fe49f481fc909b999d25faf6.
+
+Phase I logical source history:
+
+- 9a9fb384da9f29dadecf94c28fd33c8ade7fcff8: local hardening and integrated verification.
+- 90c2a552d87a11d1f9b750111a10fafed052042a: isolated scanner file access on Linux.
+- 81706569286ad33391a90fb851f949453cfe0dfa: PostgreSQL helper/library security fixes.
+- ed55088a0386fec51c86b889a8abfd6d21863a3d: retained-image Compose isolation.
+- ffbdc6ae53cc483bcf4ceef55bc3e9885567c771: bounded Kafka administration/diagnostics.
+
+A documentation receipt necessarily follows the verified code commit. This file
+records that immutable implementation/main verification point; resolve the later
+documentation commit with git log -1 --format=%H -- docs/FINAL_ESEP_IMPLEMENTATION_REPORT.md.
+The final current remote ref is also reported to the user after the receipt push.
 
 ## Run and rollback
 

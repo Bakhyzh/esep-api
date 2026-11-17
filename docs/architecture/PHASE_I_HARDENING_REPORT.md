@@ -1,6 +1,9 @@
 # Phase I — hardening and integrated verification
 
-Status: final validation/publication in progress. No production deployment.
+Status: source published as ffbdc6ae53cc483bcf4ceef55bc3e9885567c771;
+CI44126587328 passed all12 jobs. Main workflow44128575834 passed all12
+verification jobs and the GHCR image job; server deployment was skipped. The
+remote SHA was verified. No production deployment.
 
 Implemented authenticated Kafka principals and topic/group ACLs, fail-closed storage
 initialization, offline encrypted broker preservation, clone-based upgrade/rollback,
@@ -37,7 +40,7 @@ require production remediation/review; they are not waived by local operation.
 
 Previous complete patched Maven verification: User23, Ledger115, Notification27,
 Analytics34, Gateway18, DBA4; monolith248 with one opt-in live skip. All passed.
-Actual contracts:500 identity,199 transfer,51 account and250 posting payloads
+Earlier local contracts:500 identity,199 transfer,51 account and250 posting payloads
 validated without logging contents. Real isolated TLS1.2/TLS1.3, untrusted-CA
 rejection and Host rejection passed. Dedicated migration commands executed for
 all four business databases without starting runtime services/consumers.
@@ -50,3 +53,16 @@ strengthened; signature, audience, ownership and financial checks were not weake
 Final executed E2E, scan date/findings, CI receipt, source SHA and push status are
 recorded in docs/FINAL_ESEP_IMPLEMENTATION_REPORT.md. Existing original worktrees,
 db-lab and seven original architecture documents are preserved separately.
+
+Final hardening includes a same-engine PostgreSQL17.11 derivative with gosu1.20,
+Go1.27.4/x/sys0.44.0 and fixed krb5/libxslt packages. Actual scan: zero findings
+at every severity; five-database row/sequence fingerprints survived replacement.
+Local complete API/browser/broker-recovery E2E passed again after the fixes.
+The clean Linux CI also passed the full real PKCE/browser, identity, transfer,
+notification, analytics, outage/recovery, event contracts and broker recreation
+workflow. It preserved36 business partition offsets and15 committed group positions
+in that fresh fixture; the populated local fixture preserved18 committed positions.
+
+Refreshed scans report six provider HIGH and three Nginx HIGH findings, plus an
+end-of-support local Redis OS. These remain production gates, not suppressed
+findings. Earlier CI failures and their fixes are described in the final report.

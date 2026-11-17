@@ -99,6 +99,7 @@ No production endpoint is accepted by the local fault/performance harnesses.
 - [Deployment](docs/architecture/DEPLOYMENT_ARCHITECTURE.md), [observability](docs/architecture/OBSERVABILITY.md)
 - [Measured performance](docs/architecture/PHASE_H_PERFORMANCE_RESILIENCE_REPORT.md)
 - [Backup/restore/PITR and incident runbook](docs/runbooks/platform-operations.md)
+- [Guarded local security cutover and rollback](docs/runbooks/platform-security-cutover.md)
 - [Production gates](docs/architecture/PRODUCTION_READINESS.md)
 - [Final implementation and publication report](docs/FINAL_ESEP_IMPLEMENTATION_REPORT.md)
 

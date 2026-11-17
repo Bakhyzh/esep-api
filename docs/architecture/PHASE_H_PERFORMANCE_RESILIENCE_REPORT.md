@@ -1,6 +1,7 @@
 # Phase H — performance and resilience report
 
-Status: locally implemented and verified; feature CI/main publication pending.
+Status: implemented, verified and published through
+14b23f0e1d83c97a772d3153a0e194aaf7dea77f; CI42355856981 passed all10 jobs.
 Not a production capacity claim.
 
 ## Scope and resource controls
@@ -143,4 +144,6 @@ final server and emits safe filename/line diagnostics without SQL or credentials
 The original generic failure's exact cause is unproven. Real isolated PITR rerun
 passed:9.255seconds, pg_verifybackup passed, recovered only `keep`, excluded the
 post-target transaction; all new lab volumes retained, financial DBs never accessed.
-Main integration awaits a complete green follow-up CI run.
+Follow-up CI42355856981 passed all10 jobs. Commit
+14b23f0e1d83c97a772d3153a0e194aaf7dea77f was integrated and pushed to main;
+the remote SHA was verified. Earlier pending statements describe report creation.
