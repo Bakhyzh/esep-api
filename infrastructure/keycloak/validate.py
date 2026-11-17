@@ -27,6 +27,10 @@ CALLBACK = "http://localhost:5173/oidc/callback"
 DC = ["docker", "compose", "--project-name", "esep-identity-dev",
       "--project-directory", str(DIR), "--env-file", str(DIR / ".env"),
       "-f", str(DIR / "compose.yaml")]
+SECURE_ENV=DIR.parents[1]/'.env.identity-secure'
+if SECURE_ENV.exists():
+    DC+=['--env-file',str(SECURE_ENV),'-f',str(DIR.parents[1]/'infrastructure/platform/compose.identity-security.yaml')]
+
 
 
 def check(condition, message):
@@ -162,7 +166,7 @@ def admin_login(env):
                  env["KC_BOOTSTRAP_ADMIN_USERNAME"], env["KC_BOOTSTRAP_ADMIN_PASSWORD"])["access_token"]
 
 
-def verify_jwt(token, jwks, expected_roles):
+def verify_signature(token, jwks):
     # Validation-only RS256 PKCS#1 v1.5 check against advertised public JWKS.
     # Production integration will use Spring Security/Nimbus, not this smoke helper.
     header64, payload64, signature64 = token.split(".")
@@ -179,6 +183,11 @@ def verify_jwt(token, jwks, expected_roles):
     digest_info = bytes.fromhex("3031300d060960864801650304020105000420") + digest
     expected = b"\x00\x01" + b"\xff" * (width - len(digest_info) - 3) + b"\x00" + digest_info
     check(secrets.compare_digest(decoded, expected), "RS256 signature verification failed")
+    return payload
+
+
+def verify_jwt(token, jwks, expected_roles):
+    payload = verify_signature(token, jwks)
     aud = payload.get("aud", [])
     if isinstance(aud, str):
         aud = [aud]

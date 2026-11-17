@@ -1,0 +1,6 @@
+# LOCAL verified-clone cutover only. Original keycloak_db stays intact for rollback.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
+    environment:
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/${KEYCLOAK_SECURE_DB_NAME:?Run verified clone laboratory first}

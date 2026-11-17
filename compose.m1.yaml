@@ -1,0 +1,10 @@
+# Lightweight default: one authoritative Ledger instance, two Gateways; no optional telemetry.
+services:
+  ledger:
+    environment:
+      JAVA_OPTS: -Xms64m -Xmx160m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
+    mem_limit: 448m
+    healthcheck:
+      start_period: 300s
+  ledger-2:
+    profiles: [scaling]

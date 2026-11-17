@@ -1,0 +1,78 @@
+worker_processes auto;
+pid /tmp/nginx.pid;
+error_log /dev/stderr warn;
+worker_shutdown_timeout 30s;
+events { worker_connections 1024; }
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    client_body_temp_path /tmp/client;
+    proxy_temp_path /tmp/proxy;
+    fastcgi_temp_path /tmp/fastcgi;
+    uwsgi_temp_path /tmp/uwsgi;
+    scgi_temp_path /tmp/scgi;
+    log_format safe escape=json '{"method":"$request_method","status":$status,"bytes":$body_bytes_sent,"duration":$request_time,"edge_id":"$request_id"}';
+    access_log /dev/stdout safe;
+    server_tokens off;
+    client_max_body_size 64k;
+    client_body_timeout 10s;
+    client_header_timeout 10s;
+    keepalive_timeout 15s;
+    limit_req_zone $binary_remote_addr zone=per_address:10m rate=60r/s;
+    limit_conn_zone $binary_remote_addr zone=connections:10m;
+    upstream gateways {
+        least_conn;
+        server gateway:8080 max_fails=2 fail_timeout=3s;
+        server gateway-2:8080 max_fails=2 fail_timeout=3s;
+        keepalive 16;
+    }
+    server {
+        listen 8443 ssl default_server;
+        server_name ${APP_HOST};
+        ssl_certificate /run/secrets/edge.crt;
+        ssl_certificate_key /run/secrets/edge.key;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_session_cache shared:TLS:1m;
+        ssl_session_timeout 10m;
+        if ($host != ${APP_HOST}) { return 444; }
+        limit_req zone=per_address burst=120 nodelay;
+        limit_req_status 429;
+        limit_conn connections 64;
+        add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy no-referrer always;
+        add_header X-Frame-Options DENY always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${OIDC_ORIGIN}; frame-src ${OIDC_ORIGIN}; frame-ancestors 'none'; base-uri 'self'; form-action 'self' ${OIDC_ORIGIN}" always;
+        location = /ready { default_type text/plain; return 200 'ready'; }
+        location /api/ {
+            proxy_pass https://gateways;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-Host $host;
+            proxy_set_header X-Forwarded-For $remote_addr;
+            proxy_set_header Forwarded "";
+            proxy_connect_timeout 2s;
+            proxy_read_timeout 15s;
+            proxy_send_timeout 15s;
+            proxy_ssl_server_name on;
+            proxy_ssl_name ${GATEWAY_TLS_SERVER_NAME};
+            proxy_ssl_trusted_certificate /run/secrets/service-ca.pem;
+            proxy_ssl_verify on;
+            proxy_ssl_verify_depth 3;
+            # No non_idempotent retry: callers retain responsibility for original financial keys.
+            proxy_next_upstream error timeout http_502 http_503;
+            proxy_next_upstream_tries 2;
+        }
+        location /actuator { return 404; }
+        location /internal { return 404; }
+        location / {
+            proxy_pass http://web:8080;
+            proxy_set_header Authorization "";
+            proxy_set_header Host $host;
+            proxy_connect_timeout 2s;
+            proxy_read_timeout 10s;
+        }
+    }
+}

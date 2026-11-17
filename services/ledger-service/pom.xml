@@ -28,8 +28,20 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+        <!-- Targeted security backports; keep Boot4.1.1 and existing API/financial behavior. -->
+        <tomcat.version>11.0.27</tomcat.version>
+        <jackson-bom.version>3.1.7</jackson-bom.version>
+        <jackson-2-bom.version>2.21.7</jackson-2-bom.version>
+        <esep.lz4.version>1.11.4</esep.lz4.version>
+        <esep.snappy.version>1.1.10.9</esep.snappy.version>
+
 	</properties>
-	<dependencies>
+	<dependencyManagement><dependencies>
+            <dependency><groupId>at.yawk.lz4</groupId><artifactId>lz4-java</artifactId><version>${esep.lz4.version}</version></dependency>
+            <dependency><groupId>org.xerial.snappy</groupId><artifactId>snappy-java</artifactId><version>${esep.snappy.version}</version></dependency>
+</dependencies></dependencyManagement>
+
+    <dependencies>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-opentelemetry</artifactId></dependency>
         <dependency><groupId>io.micrometer</groupId><artifactId>micrometer-registry-prometheus</artifactId></dependency>
         <dependency><groupId>io.opentelemetry.instrumentation</groupId><artifactId>opentelemetry-logback-appender-1.0</artifactId><version>2.28.0-alpha</version></dependency>
@@ -144,6 +156,7 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration><mainClass>com.esep.LedgerServiceApplication</mainClass></configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

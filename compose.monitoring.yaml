@@ -224,9 +224,15 @@
         "--kafka.version=3.9.1",
         "--topic.filter=esep.*",
         "--group.filter=esep.*",
-        "--refresh.metadata=10s"
+        "--refresh.metadata=10s",
+        "--sasl.enabled",
+        "--sasl.mechanism=plain"
       ],
-      "mem_limit": "48m"
+      "mem_limit": "48m",
+      "environment": {
+        "SASL_USER_NAME": "monitor",
+        "SASL_USER_PASSWORD": "${KAFKA_MONITOR_PASSWORD:?required}"
+      }
     },
     "redis-exporter": {
       "image": "oliver006/redis_exporter:v1.97.0@sha256:f5f903fbe77571d455ede0453b084d6840bc62fc105efac001034421cab83b99",

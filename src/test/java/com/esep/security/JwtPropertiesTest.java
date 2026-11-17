@@ -12,6 +12,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Fail fast: the app must refuse to start with a missing or weak JWT secret. */
 class JwtPropertiesTest {
 
+    private static final String TEST_SECRET = java.util.Base64.getEncoder().encodeToString(
+            new java.security.SecureRandom().generateSeed(32));
+
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(ValidationAutoConfiguration.class))
             .withUserConfiguration(Config.class)
@@ -31,13 +34,13 @@ class JwtPropertiesTest {
 
     @Test
     void validSecret_contextStarts() {
-        runner.withPropertyValues("esep.security.jwt.secret=0123456789abcdef0123456789abcdef")
+        runner.withPropertyValues("esep.security.jwt.secret=" + TEST_SECRET)
                 .run(context -> assertThat(context).hasNotFailed().hasSingleBean(JwtProperties.class));
     }
 
     @Test
     void zeroTtl_contextFails() {
-        runner.withPropertyValues("esep.security.jwt.secret=0123456789abcdef0123456789abcdef",
+        runner.withPropertyValues("esep.security.jwt.secret=" + TEST_SECRET,
                         "esep.security.jwt.ttl=0s")
                 .run(context -> assertThat(context).hasFailed());
     }

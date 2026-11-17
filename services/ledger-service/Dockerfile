@@ -1,5 +1,5 @@
 # ---- build stage: full JDK + Maven, thrown away after the build ----
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM maven:3.9-eclipse-temurin-21@sha256:99e61abcff91a9b1333463bd8451fb18495d6eba9250ac66a338b518f8278320 AS build
 WORKDIR /build
 ENV MAVEN_OPTS="-Xmx384m -XX:ActiveProcessorCount=2"
 
@@ -12,7 +12,7 @@ COPY src ./src
 RUN --mount=type=cache,id=esep-maven-21,target=/root/.m2,sharing=locked mvn -B -q -DskipTests package && cp target/ledger-service-*.jar app.jar
 
 # ---- runtime stage: JRE only, ~4x smaller than the build image ----
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-alpine@sha256:ac05c3c42b7c2f1a52c9bd52f01041fa1958231b15ebeae7420429cbc5baf474
 WORKDIR /app
 
 # never run the app as root inside the container

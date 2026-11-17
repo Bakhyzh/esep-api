@@ -1,0 +1,759 @@
+{
+  "name": "esep-platform-production-template",
+  "x-purpose": "Preparation only. Never started automatically. External TLS Keycloak/PostgreSQL/Kafka/Redis must be provisioned and reviewed separately. No local data volumes are mounted.",
+  "services": {
+    "user": {
+      "image": "${USER_IMAGE:?immutable image digest required}",
+      "env_file": [
+        "${PROD_ENV_DIR:?external per-service credentials required}/user.env"
+      ],
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "production",
+        "SERVER_SSL_KEY_STORE": "file:/run/secrets/service.p12",
+        "JAVA_OPTS": "-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?external secret directory required}/user.p12",
+          "target": "/run/secrets/service.p12",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/service-ca.pem",
+          "target": "/run/secrets/service-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "512m",
+      "cpus": 2,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "printf 'GET /actuator/health/readiness HTTP/1.1\\r\\nHost: user\\r\\nConnection: close\\r\\n\\r\\n' | openssl s_client -connect user:8083 -servername user -verify_hostname user -verify_return_error -CAfile /run/secrets/service-ca.pem -quiet 2>/dev/null | grep -q '\"status\":\"UP\"' "
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "120s",
+        "retries": 12
+      }
+    },
+    "user-migrate": {
+      "image": "${USER_IMAGE:?required}",
+      "profiles": [
+        "migration"
+      ],
+      "env_file": [
+        "${PROD_ENV_DIR:?required}/user-migration.env"
+      ],
+      "entrypoint": [
+        "java",
+        "-Xms32m",
+        "-Xmx128m",
+        "-XX:ActiveProcessorCount=1",
+        "-Dloader.main=com.esep.ops.MigrateDatabase",
+        "-cp",
+        "/app/app.jar",
+        "org.springframework.boot.loader.launch.PropertiesLauncher"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "mem_limit": "256m",
+      "cpus": 1
+    },
+    "ledger": {
+      "image": "${LEDGER_IMAGE:?immutable image digest required}",
+      "env_file": [
+        "${PROD_ENV_DIR:?external per-service credentials required}/ledger.env"
+      ],
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "production",
+        "SERVER_SSL_KEY_STORE": "file:/run/secrets/service.p12",
+        "LEDGER_INSTANCE": "ledger",
+        "JAVA_OPTS": "-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError",
+        "SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE": "10"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?external secret directory required}/ledger.p12",
+          "target": "/run/secrets/service.p12",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/service-ca.pem",
+          "target": "/run/secrets/service-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "512m",
+      "cpus": 2,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "printf 'GET /actuator/health/readiness HTTP/1.1\\r\\nHost: ledger\\r\\nConnection: close\\r\\n\\r\\n' | openssl s_client -connect ledger:8082 -servername ledger -verify_hostname ledger -verify_return_error -CAfile /run/secrets/service-ca.pem -quiet 2>/dev/null | grep -q '\"status\":\"UP\"' "
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "120s",
+        "retries": 12
+      }
+    },
+    "ledger-migrate": {
+      "image": "${LEDGER_IMAGE:?required}",
+      "profiles": [
+        "migration"
+      ],
+      "env_file": [
+        "${PROD_ENV_DIR:?required}/ledger-migration.env"
+      ],
+      "entrypoint": [
+        "java",
+        "-Xms32m",
+        "-Xmx128m",
+        "-XX:ActiveProcessorCount=1",
+        "-Dloader.main=com.esep.ops.MigrateDatabase",
+        "-cp",
+        "/app/app.jar",
+        "org.springframework.boot.loader.launch.PropertiesLauncher"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "mem_limit": "256m",
+      "cpus": 1
+    },
+    "notification": {
+      "image": "${NOTIFICATION_IMAGE:?immutable image digest required}",
+      "env_file": [
+        "${PROD_ENV_DIR:?external per-service credentials required}/notification.env"
+      ],
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "production",
+        "SERVER_SSL_KEY_STORE": "file:/run/secrets/service.p12",
+        "JAVA_OPTS": "-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?external secret directory required}/notification.p12",
+          "target": "/run/secrets/service.p12",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/service-ca.pem",
+          "target": "/run/secrets/service-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "512m",
+      "cpus": 2,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "printf 'GET /actuator/health/readiness HTTP/1.1\\r\\nHost: notification\\r\\nConnection: close\\r\\n\\r\\n' | openssl s_client -connect notification:8084 -servername notification -verify_hostname notification -verify_return_error -CAfile /run/secrets/service-ca.pem -quiet 2>/dev/null | grep -q '\"status\":\"UP\"' "
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "120s",
+        "retries": 12
+      }
+    },
+    "notification-migrate": {
+      "image": "${NOTIFICATION_IMAGE:?required}",
+      "profiles": [
+        "migration"
+      ],
+      "env_file": [
+        "${PROD_ENV_DIR:?required}/notification-migration.env"
+      ],
+      "entrypoint": [
+        "java",
+        "-Xms32m",
+        "-Xmx128m",
+        "-XX:ActiveProcessorCount=1",
+        "-Dloader.main=com.esep.ops.MigrateDatabase",
+        "-cp",
+        "/app/app.jar",
+        "org.springframework.boot.loader.launch.PropertiesLauncher"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "mem_limit": "256m",
+      "cpus": 1
+    },
+    "analytics": {
+      "image": "${ANALYTICS_IMAGE:?immutable image digest required}",
+      "env_file": [
+        "${PROD_ENV_DIR:?external per-service credentials required}/analytics.env"
+      ],
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "production",
+        "SERVER_SSL_KEY_STORE": "file:/run/secrets/service.p12",
+        "JAVA_OPTS": "-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?external secret directory required}/analytics.p12",
+          "target": "/run/secrets/service.p12",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/service-ca.pem",
+          "target": "/run/secrets/service-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "512m",
+      "cpus": 2,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "printf 'GET /actuator/health/readiness HTTP/1.1\\r\\nHost: analytics\\r\\nConnection: close\\r\\n\\r\\n' | openssl s_client -connect analytics:8085 -servername analytics -verify_hostname analytics -verify_return_error -CAfile /run/secrets/service-ca.pem -quiet 2>/dev/null | grep -q '\"status\":\"UP\"' "
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "120s",
+        "retries": 12
+      }
+    },
+    "analytics-migrate": {
+      "image": "${ANALYTICS_IMAGE:?required}",
+      "profiles": [
+        "migration"
+      ],
+      "env_file": [
+        "${PROD_ENV_DIR:?required}/analytics-migration.env"
+      ],
+      "entrypoint": [
+        "java",
+        "-Xms32m",
+        "-Xmx128m",
+        "-XX:ActiveProcessorCount=1",
+        "-Dloader.main=com.esep.ops.MigrateDatabase",
+        "-cp",
+        "/app/app.jar",
+        "org.springframework.boot.loader.launch.PropertiesLauncher"
+      ],
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "mem_limit": "256m",
+      "cpus": 1
+    },
+    "gateway": {
+      "image": "${GATEWAY_IMAGE:?immutable image digest required}",
+      "env_file": [
+        "${PROD_ENV_DIR:?external per-service credentials required}/gateway.env"
+      ],
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "production",
+        "SERVER_SSL_KEY_STORE": "file:/run/secrets/service.p12",
+        "GATEWAY_INSTANCE": "gateway",
+        "JAVA_OPTS": "-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?external secret directory required}/gateway.p12",
+          "target": "/run/secrets/service.p12",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/service-ca.pem",
+          "target": "/run/secrets/service-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "512m",
+      "cpus": 2,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "printf 'GET /actuator/health/readiness HTTP/1.1\\r\\nHost: gateway\\r\\nConnection: close\\r\\n\\r\\n' | openssl s_client -connect gateway:8080 -servername gateway -verify_hostname gateway -verify_return_error -CAfile /run/secrets/service-ca.pem -quiet 2>/dev/null | grep -q '\"status\":\"UP\"' "
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "120s",
+        "retries": 12
+      }
+    },
+    "gateway-2": {
+      "image": "${GATEWAY_IMAGE:?immutable image digest required}",
+      "env_file": [
+        "${PROD_ENV_DIR:?external per-service credentials required}/gateway.env"
+      ],
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "production",
+        "SERVER_SSL_KEY_STORE": "file:/run/secrets/service.p12",
+        "GATEWAY_INSTANCE": "gateway-2",
+        "JAVA_OPTS": "-Xms64m -Xmx256m -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?external secret directory required}/gateway.p12",
+          "target": "/run/secrets/service.p12",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/service-ca.pem",
+          "target": "/run/secrets/service-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/database-ca.pem",
+          "target": "/run/secrets/database-ca.pem",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        },
+        {
+          "type": "bind",
+          "source": "${PROD_SECRETS_DIR:?required}/cacerts",
+          "target": "/opt/java/openjdk/lib/security/cacerts",
+          "read_only": true,
+          "bind": {
+            "create_host_path": false
+          }
+        }
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "512m",
+      "cpus": 2,
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "printf 'GET /actuator/health/readiness HTTP/1.1\\r\\nHost: gateway\\r\\nConnection: close\\r\\n\\r\\n' | openssl s_client -connect gateway-2:8080 -servername gateway -verify_hostname gateway -verify_return_error -CAfile /run/secrets/service-ca.pem -quiet 2>/dev/null | grep -q '\"status\":\"UP\"' "
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "120s",
+        "retries": 12
+      }
+    },
+    "web": {
+      "image": "${WEB_IMAGE:?verified frontend image digest with production public build arguments required}",
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=16m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "mem_limit": "64m"
+    },
+    "edge": {
+      "image": "nginx:1.30.6-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311",
+      "user": "nginx",
+      "entrypoint": [
+        "sh",
+        "/config/edge-start.sh"
+      ],
+      "environment": {
+        "APP_HOST": "${APP_HOST:?exact public HTTPS hostname required}",
+        "OIDC_ORIGIN": "${OIDC_ORIGIN:?exact HTTPS Keycloak origin required}",
+        "GATEWAY_TLS_SERVER_NAME": "${GATEWAY_TLS_SERVER_NAME:?Gateway certificate DNS name required}"
+      },
+      "ports": [
+        "127.0.0.1:18443:8443"
+      ],
+      "volumes": [
+        "./infrastructure/production/nginx.conf.template:/config/nginx.conf.template:ro",
+        "./infrastructure/production/edge-start.sh:/config/edge-start.sh:ro",
+        "${PROD_SECRETS_DIR:?required}/edge.crt:/run/secrets/edge.crt:ro",
+        "${PROD_SECRETS_DIR:?required}/edge.key:/run/secrets/edge.key:ro",
+        "${PROD_SECRETS_DIR:?required}/service-ca.pem:/run/secrets/service-ca.pem:ro",
+        "${PROD_SECRETS_DIR:?required}/edge-ca.pem:/run/secrets/edge-ca.pem:ro"
+      ],
+      "networks": [
+        "backplane"
+      ],
+      "read_only": true,
+      "tmpfs": [
+        "/tmp:size=32m,mode=1777"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "stop_grace_period": "45s",
+      "mem_limit": "64m",
+      "depends_on": {
+        "gateway": {
+          "condition": "service_healthy"
+        },
+        "gateway-2": {
+          "condition": "service_healthy"
+        },
+        "web": {
+          "condition": "service_healthy"
+        }
+      },
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "curl -fsS --cacert /run/secrets/edge-ca.pem --resolve \"$$APP_HOST:8443:127.0.0.1\" \"https://$$APP_HOST:8443/ready\" | grep -q ready"
+        ],
+        "interval": "10s",
+        "timeout": "5s",
+        "start_period": "10s",
+        "retries": 6
+      }
+    }
+  },
+  "networks": {
+    "backplane": {
+      "name": "${PROD_NETWORK_NAME:?reviewed private network required}",
+      "external": true
+    }
+  }
+}

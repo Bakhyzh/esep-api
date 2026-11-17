@@ -1,0 +1,10 @@
+# Explicit production opt-in. Migration runs separately; credentials have no defaults.
+spring:
+  data.redis.ssl.enabled: true
+  data.redis.host: ${REDIS_HOST}
+  data.redis.port: ${REDIS_PORT}
+server.ssl:
+  enabled: true
+  key-store: ${SERVER_SSL_KEY_STORE}
+  key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD}
+  key-store-type: PKCS12

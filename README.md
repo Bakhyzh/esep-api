@@ -1,346 +1,108 @@
-# Esep API
+# ESEP — event-driven financial platform
 
-[![Deploy](https://github.com/Bakhyzh/esep-api/actions/workflows/deploy.yml/badge.svg)](https://github.com/Bakhyzh/esep-api/actions/workflows/deploy.yml)
+Java21 microservices with Keycloak OIDC, a PostgreSQL double-entry ledger,
+transactional outbox, Kafka projections, Redis caching, two API Gateways and Nginx.
+Designed to exercise ownership, concurrent transfers, idempotency, failure recovery
+and observable asynchronous processing. This is a locally verified portfolio platform;
+real customer deployment requires additional security and operational approval.
 
-Wallets and money transfers on a **double-entry ledger**, with JWT security, SQL spending analytics,
-a Redis report cache and Kafka notifications through a Transactional Outbox.
-A portfolio project focused on the things that break in real payment systems:
-money precision, race conditions, deadlocks, duplicate requests, lost events and access control.
-
-**Stack:** Java 21 · Spring Boot 4.1 · Spring Data JPA (Hibernate 7) · PostgreSQL 17 · Flyway ·
-Spring Security (JWT resource server) · Redis · Kafka (KRaft) · springdoc OpenAPI · JUnit 5 · Mockito ·
-Testcontainers · Docker Compose · GitHub Actions
-
-## Live demo
-
-- Frontend: https://bakhyzh.github.io/esep-web/ (sign in as `alice@esep.dev` / `password123`)
-- API: runs on the author's machine behind a Cloudflare quick tunnel while the demo is on, so it may be offline;
-  the URL changes on every start (`scripts/public-demo.sh status` prints it)
-
-Deployment (VPS + Docker Compose + Caddy, GitHub Actions): [docs/DEPLOY.md](docs/DEPLOY.md).
-Temporary demo without a server, one command: `scripts/public-demo.sh`
-([docs/DEPLOY.md, section 6](docs/DEPLOY.md#6-temporary-demo-without-a-server-this-mac--cloudflare-tunnel)).
-
-## Quick start
-
-```bash
-docker compose up --build
-```
-
-Starts PostgreSQL, Redis, Kafka and the app.
-
-| What | URL |
-|---|---|
-| Swagger UI | http://localhost:8081/swagger-ui.html |
-| OpenAPI JSON | http://localhost:8081/v3/api-docs |
-| Health | http://localhost:8081/actuator/health |
-
-Demo users (created by the `dev` profile seed, password `password123`):
-
-| Email | Role |
-|---|---|
-| `alice@esep.dev` | USER |
-| `bob@esep.dev` | USER |
-| `admin@esep.dev` | ADMIN |
-
-If port 8081 is busy: `APP_PORT=8085 docker compose up --build`.
-
-### Try it with curl
-
-```bash
-# log in
-ALICE=$(curl -s localhost:8081/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"email":"alice@esep.dev","password":"password123"}' | jq -r .accessToken)
-ADMIN=$(curl -s localhost:8081/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"email":"admin@esep.dev","password":"password123"}' | jq -r .accessToken)
-
-# open an account
-ACC=$(curl -s localhost:8081/api/accounts -H "Authorization: Bearer $ALICE" \
-  -H 'Content-Type: application/json' -d '{"currency":"KZT"}' | jq .id)
-
-# money enters the system: deposit (ADMIN only)
-curl -s localhost:8081/api/deposits -H "Authorization: Bearer $ADMIN" -H 'Content-Type: application/json' \
-  -H "Idempotency-Key: $(uuidgen)" -d "{\"accountId\": $ACC, \"amount\": 500}"
-
-# spending report
-curl -s "localhost:8081/api/analytics/spending?currency=KZT&period=DAY&zone=Asia/Almaty" \
-  -H "Authorization: Bearer $ALICE"
-```
-
-A ready-made **Postman collection** with test scripts is in
-[`postman/esep-api.postman_collection.json`](postman/esep-api.postman_collection.json)
-(44 requests: auth, accounts, transfers, idempotent retries, history, notifications, analytics, error codes).
-
-## Local development
-
-```bash
-docker compose up -d postgres redis kafka   # infrastructure only
-./mvnw spring-boot:run                      # app on :8081 with the dev profile
-./mvnw test                                 # unit + integration tests (Docker must be running)
-```
-
-The app starts even without Redis or Kafka: reports then come straight from the database, and outbox events
-wait in the table until Kafka is reachable.
-
-## Domain model
-
-A transfer of 100 from A to B is **one transaction with two ledger entries**: `DEBIT 100` on A and
-`CREDIT 100` on B. The signed sum of the entries of every transaction is always zero.
-
-Money enters the system through **system funding accounts** (one per currency): a deposit debits
-the system account and credits the user's account. A system account may go negative; its balance
-is minus the total money that entered the system. Therefore **the sum of all balances is always 0**.
+## Architecture
 
 ```mermaid
-erDiagram
-    users ||--o{ accounts : owns
-    users ||--o{ transactions : "created_by"
-    transactions ||--|{ ledger_entries : has
-    accounts ||--o{ ledger_entries : "posted to"
-
-    users {
-        bigint id PK
-        varchar email UK
-        varchar password_hash "{bcrypt}..."
-        varchar role "USER | ADMIN"
-        timestamptz created_at
-    }
-    accounts {
-        bigint id PK
-        bigint user_id FK
-        varchar currency "ISO 4217"
-        numeric balance "NUMERIC(19,4), >= 0 for USER"
-        bigint version "optimistic lock"
-        varchar type "USER | SYSTEM"
-        varchar status "ACTIVE | CLOSED"
-        timestamptz created_at
-        timestamptz closed_at
-    }
-    transactions {
-        bigint id PK
-        varchar type "TRANSFER | DEPOSIT | WITHDRAWAL"
-        varchar status "PENDING | COMPLETED | FAILED"
-        bigint created_by FK
-        varchar idempotency_key "UNIQUE per created_by"
-        varchar request_hash "SHA-256 of the request"
-        timestamptz created_at
-    }
-    ledger_entries {
-        bigint id PK
-        bigint transaction_id FK
-        bigint account_id FK
-        numeric amount "NUMERIC(19,4), > 0"
-        varchar direction "DEBIT | CREDIT"
-        timestamptz created_at
-    }
+flowchart LR
+  Browser[Web: Code + PKCE] --> Edge[Nginx]
+  Browser --> KC[Keycloak]
+  Edge --> G1[Gateway 1]
+  Edge --> G2[Gateway 2]
+  G1 & G2 --> User[User]
+  G1 & G2 --> Ledger[Ledger]
+  G1 & G2 --> Analytics[Analytics]
+  G1 & G2 --> Notification[Notification]
+  User --> UDB[(user_db)]
+  Ledger --> LDB[(ledger_db)]
+  Analytics --> ADB[(analytics_db)]
+  Notification --> NDB[(notification_db)]
+  User & Ledger --> Kafka
+  Kafka --> Ledger & Analytics & Notification
+  Analytics & G1 & G2 --> Redis
 ```
 
-Schema changes only through Flyway migrations (`ddl-auto: validate`):
+Ledger alone owns accounts, balances, transfers, postings, financial idempotency
+and outbox in one ACID transaction. User owns stable business IDs and verified
+issuer/subject mappings. No email-based ownership linking or remote user-database
+queries are used. Every service validates tokens and authorizes access independently.
+Event delivery is at least once; consumers deduplicate rather than claiming exactly once.
 
-| Migration | Change |
-|---|---|
-| V1 | Initial schema, CHECK constraints (non-negative balance, positive amounts), FK indexes |
-| V2 | Account status (closed, never deleted); one active account per user and currency (partial unique index) |
-| V3 | System funding accounts for KZT / USD / EUR |
-| V4 | `request_hash` for idempotency |
-| V5 | `created_by`; Idempotency-Key unique per user |
-| V6 | Partial covering index for analytics, built `CONCURRENTLY` |
-| V7 | `outbox_events`, `processed_events`, `notifications` |
+## Run a fresh local environment
 
-## Key design decisions
+Prerequisites: Docker Compose, Python3, Git and the contract-pinned esep-web checkout.
+Java21 is required for host Maven tests; Node24/Chromium for browser tests.
 
-### Money
-- `BigDecimal` in Java and `NUMERIC(19,4)` in the database, never `double`.
-- Amounts with more than 4 decimal places are **rejected, not rounded** (`RoundingMode.UNNECESSARY`).
-- Balances are compared with `compareTo`, not `equals` (`0.0000` vs `0`).
-- A posting that would push a balance past ±999 999 999 999 999.9999 (the column limit) is rejected
-  with `422 BALANCE_LIMIT_EXCEEDED` before it reaches the database.
-- Accounts can be opened only in currencies that have a system funding account (KZT, USD, EUR);
-  any other ISO code is `422 UNSUPPORTED_CURRENCY`, since such an account could never be funded.
-
-### Double entry
-- `LedgerTransaction` is the aggregate root: entries are created only through it, and it refuses to
-  complete unless the entries sum to zero.
-- A balance changes **only together with a ledger entry** (`LedgerTransaction.post`), so
-  `balance == SUM(entries)` holds for every account (checked in the concurrency tests).
-- The database is the last line of defense: `CHECK (balance >= 0)` for user accounts, `CHECK (amount > 0)`.
-
-### Transactions, locking and deadlocks
-- The whole transfer (two balance updates, transaction row, two entries) runs in one `@Transactional`.
-- Accounts are locked with `SELECT ... FOR UPDATE` (`PESSIMISTIC_WRITE`), so the balance check
-  runs on fresh, locked rows; concurrent transfers from one account queue up instead of failing.
-- **Locks are always taken in ascending account id order**, so `A→B` and `B→A` cannot deadlock.
-  Verified experimentally: without the ordering the test fails with `deadlock detected`.
-- `@Version` stays as a safety net; any `ConcurrencyFailureException` becomes `409, please retry`.
-
-### Idempotency
-- Every `POST /api/transfers` and `POST /api/deposits` requires an `Idempotency-Key` header.
-- Same key + same request → `200 OK`, `Idempotent-Replayed: true`, the **original** result; money moves once.
-- Same key + different request → `422` (detected by a SHA-256 fingerprint of the request).
-- Keys are unique **per user**: two clients can never see each other's results.
-- The key is checked *after* the account locks are taken, so parallel retries wait and then replay.
-  A race on different accounts is stopped by the unique index; `TransactionService` catches it
-  *outside* the rolled-back transaction and returns the winner's result.
-
-### Security
-- Stateless JWT (HS256) via Spring Security's resource server: `sub` = user id, `role` claim.
-- The JWT secret is validated on startup: missing or shorter than 256 bits → the app does not start.
-- Passwords: BCrypt through `DelegatingPasswordEncoder`; the same error and the same timing for
-  "unknown email" and "wrong password".
-- Users see and spend only their own accounts. Somebody else's resource answers **404, not 403**,
-  so ids cannot be enumerated. Deposits are ADMIN-only.
-- 401/403 from security filters are rendered as the same `application/problem+json` as all other errors.
-- **Rate limit** on `POST /api/auth/login` and `/api/auth/register`: 10 requests per minute per client IP,
-  separately per endpoint (fixed window in Redis, one atomic Lua script: `INCR` + `PEXPIRE`).
-  Over the limit → `429` with `Retry-After` and code `RATE_LIMITED`. If Redis is down the limiter
-  fails open (logged), so a cache outage does not lock everybody out.
-
-### Production profile (`prod`)
-- Secrets (`JWT_SECRET`, `DB_PASSWORD`, ...) only from the environment, **no defaults**: a missing one stops the app.
-- Swagger UI and `/v3/api-docs` off; actuator exposes only `health` without details.
-- Graceful shutdown (in-flight requests get up to 20 s), no stack traces in error responses.
-- Behind Caddy: `X-Forwarded-*` trusted only from the internal Docker network, so the rate limiter sees real IPs.
-- Optional demo user (`DEMO_USER_ENABLED`, credentials from `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD`),
-  created idempotently on startup with one funded KZT account.
-
-### Asynchronous notifications: Transactional Outbox + Kafka
-
-```
-POST /api/transfers ──► one DB transaction: balances + ledger entries + outbox_events row
-                                    │ commit
-OutboxPublisher (every 1 s, FOR UPDATE SKIP LOCKED) ──► Kafka topic esep.transfers (key = sender account)
-                                    │
-TransferNotificationListener ──► processed_events + notifications (one DB transaction, idempotent)
-          │ fails 3× (1 s apart)            │ malformed payload
-          └──────────────► esep.transfers.DLT ◄┘
+```sh
+git clone https://github.com/Bakhyzh/esep-web ../esep-web
+# Run this checkout only in that fresh clone; preserve existing frontend worktrees.
+git -C ../esep-web checkout a70afab85289b299fe49f481fc909b999d25faf6
+python3 scripts/platform.py init --frontend-dir ../esep-web
+python3 scripts/platform.py build
+python3 scripts/platform.py start
+python3 scripts/platform.py status
 ```
 
-- The event exists **if and only if** the transfer committed: no lost and no phantom notifications.
-- Delivery is at-least-once; the consumer deduplicates by `event_id`.
-- `GET /api/notifications` shows the result (about a second after the transfer).
+Open http://localhost:18081. Keycloak is local at http://localhost:8180. Create human
+identities through Keycloak with the intended esep-api USER role. Credentials are
+random/private; there are no published default login passwords or default business
+ADMIN accounts. First authenticated login provisions the profile and identity events.
+The frontend waits for projections before offering financial operations.
 
-### Report cache: Redis cache-aside
-Reports are cached per user and parameters for 5 minutes. A committed transfer increments the sender's
-cache generation, which makes all their cached reports unreachable in O(1). Redis errors fall back to the database.
+Existing installations must retain their original private environments and pass
+`--identity-dir /path/to/original/infrastructure/keycloak` to lifecycle commands.
+An old broker with misplaced writable-layer logs must use the verified preservation
+procedure before recreation. Existing identity databases require verified clone
+cutover, not automatic in-place migration. Never regenerate passwords for existing
+volumes or use `docker compose down -v`.
 
-All trade-offs: **[docs/decisions.md](docs/decisions.md)**.
+The default M1 configuration runs one Ledger and two Gateways. For optional telemetry:
 
-### Analytics
-Spending reports in plain SQL: `date_trunc` grouping, `DENSE_RANK`, moving average over calendar
-days (`generate_series` + `AVG() OVER`), month-over-month comparison (CTE + `LAG`), with time-zone
-aware day boundaries. Index design and `EXPLAIN ANALYZE` on 2M ledger entries:
-**[docs/analytics.md](docs/analytics.md)**.
-
-## API overview
-
-| Method | Path | Access |
-|---|---|---|
-| POST | `/api/auth/register` | public |
-| POST | `/api/auth/login` | public |
-| GET | `/api/auth/me` | authenticated |
-| POST | `/api/accounts` | authenticated (own account) |
-| GET | `/api/accounts`, `/api/accounts/{id}` | owner; ADMIN: any (`?userId=`) |
-| POST | `/api/accounts/{id}/close` | owner, zero balance only |
-| POST | `/api/deposits` | ADMIN, `Idempotency-Key` |
-| POST | `/api/transfers` | owner of the source account, `Idempotency-Key` |
-| GET | `/api/transactions/{id}` | participants; ADMIN |
-| GET | `/api/analytics/spending` · `top-transactions` · `moving-average` · `monthly-comparison` | own data; ADMIN: `?userId=` |
-| GET | `/api/notifications` | own notifications |
-| GET | `/api/transactions?accountId=&from=&to=&page=&size=` | own operation history (paginated) |
-
-### Errors
-
-Every error has the same shape (RFC 9457 `application/problem+json` plus a stable `code`):
-
-```json
-{
-  "type": "about:blank",
-  "title": "Validation failed",
-  "status": 400,
-  "detail": "Request has invalid fields",
-  "instance": "/api/transfers",
-  "code": "VALIDATION_FAILED",
-  "timestamp": "2026-10-09T10:15:30Z",
-  "errors": [{ "field": "amount", "message": "must be greater than 0" }]
-}
+```sh
+python3 scripts/platform.py start --monitoring compact
+python3 scripts/platform.py start --monitoring compact --dashboards
+python3 scripts/platform.py stop
 ```
 
-Clients switch on `code` (`INSUFFICIENT_FUNDS`, `CURRENCY_MISMATCH`, `IDEMPOTENCY_KEY_REUSED`, `UNAUTHORIZED`, ...;
-full list in `ErrorCode`), never on `detail`. `errors` is present only for `VALIDATION_FAILED`.
+Stop retains all volumes and shared identity infrastructure. Grafana/full tracing,
+a second Ledger and load/integration suites should be scheduled separately on a4GB
+Docker VM. Optional DBA and performance tooling have their own profiles/runbooks.
 
-Input rules that are easy to miss:
-- dates (`from`, `to`, `until`) must lie within 1900-01-01..9999-12-31, otherwise `400 INVALID_REQUEST`;
-- `zone` must be a region id like `Asia/Almaty` or `UTC`; fixed offsets (`+05:00`, `UTC+05:00`) are rejected,
-  because PostgreSQL would read them with the sign inverted;
-- passwords are limited to 72 **bytes** in UTF-8 (a BCrypt limit), i.e. 36 Cyrillic letters;
-- a 401 carries `WWW-Authenticate: Bearer` (with `error="invalid_token"` for a bad token).
+## Verification
 
-### CORS
+```sh
+./mvnw verify
+./mvnw -f services/ledger-service/pom.xml verify
+./mvnw -f services/user-service/pom.xml verify
+./mvnw -f services/notification-service/pom.xml verify
+./mvnw -f services/analytics-service/pom.xml verify
+./mvnw -f services/api-gateway/pom.xml verify
+python3 infrastructure/platform/validate-config.py
+python3 infrastructure/production/validate.py
+python3 tests/e2e/kafka-security.py
+```
 
-The API accepts browser calls from `CORS_ALLOWED_ORIGINS` (default `http://localhost:5173`, the Vite dev server).
-The frontend lives in a separate repository: [esep-web](https://github.com/Bakhyzh/esep-web).
+Run large Testcontainers suites sequentially with the application stack stopped on
+memory-constrained machines. Full browser/API E2E, live event contracts, Kafka
+persistence, k6 workloads and controlled faults are executable under tests/.
+No production endpoint is accepted by the local fault/performance harnesses.
 
-## Testing
+## Evidence and operations
 
-`./mvnw test`: 230 tests.
+- [Current state](docs/architecture/CURRENT_STATE.md), [service boundaries](docs/architecture/SERVICE_BOUNDARIES.md)
+- [Security](docs/architecture/SECURITY_ARCHITECTURE.md), [database strategy](docs/architecture/DATABASE_STRATEGY.md)
+- [Deployment](docs/architecture/DEPLOYMENT_ARCHITECTURE.md), [observability](docs/architecture/OBSERVABILITY.md)
+- [Measured performance](docs/architecture/PHASE_H_PERFORMANCE_RESILIENCE_REPORT.md)
+- [Backup/restore/PITR and incident runbook](docs/runbooks/platform-operations.md)
+- [Production gates](docs/architecture/PRODUCTION_READINESS.md)
+- [Final implementation and publication report](docs/FINAL_ESEP_IMPLEMENTATION_REPORT.md)
 
-- **Unit (Mockito):** services, ledger invariants, lock order (`InOrder`), idempotent replay,
-  ownership rules, auth (hashing, same error message), analytics parameter rules.
-- **Integration (Testcontainers, PostgreSQL 17):** Flyway migrations + Hibernate schema validation,
-  security over HTTP (MockMvc with real JWTs: missing/invalid/expired token, 403, 404),
-  SQL reports with fixed timestamps (time zones, empty days, `LAG`, division by zero), OpenAPI docs.
-- **Kafka + Redis (Testcontainers):** transfer → outbox → topic → notifications end to end; rolled-back transfer
-  leaves no event; duplicate delivery processed once; malformed message → DLT immediately; failing message
-  retried and dead-lettered with no partial side effects; report cached and invalidated by the next transfer.
-- **API contract:** CORS preflight/expose headers, error `code` for every error type, paginated history,
-  and the exact list of documented endpoints (`OpenApiDocsTest`).
-- **Production features:** auth rate limit over HTTP (429 + `Retry-After`, per IP, separate counters for
-  login and register), demo user seeded from properties and not duplicated on restart.
-- **Concurrency** ([`TransferConcurrencyTest`](src/test/java/com/esep/transaction/TransferConcurrencyTest.java)):
-  - 100 parallel random transfers: total money unchanged, no negative balances,
-    every transaction sums to zero, every balance equals its ledger sum;
-  - 100 simultaneous opposite transfers `A↔B`: no deadlock;
-  - 20 parallel requests with the same key: money moves once;
-  - same key on different account pairs: exactly one wins.
-
-## Configuration
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/esep` | database |
-| `DB_USERNAME` / `DB_PASSWORD` | `esep` / `esep` | database credentials |
-| `JWT_SECRET` | dev profile only | HS256 key, at least 32 characters; **required** outside `dev` |
-| `SPRING_PROFILES_ACTIVE` | `dev` | `dev` adds demo users |
-| `SERVER_PORT` | `8081` | HTTP port |
-| `REDIS_HOST` / `REDIS_PORT` | `localhost` / `6379` | report cache |
-| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9094` | outbox publisher and notification consumer |
-| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | browser origins allowed to call the API |
-| `RATE_LIMIT_ENABLED` / `RATE_LIMIT_MAX_REQUESTS` / `RATE_LIMIT_WINDOW` | `true` / `10` / `1m` | auth rate limit |
-| `DEMO_USER_ENABLED` / `DEMO_USER_EMAIL` / `DEMO_USER_PASSWORD` | `false` / empty / empty | optional demo user |
-| `DEMO_USER_INITIAL_BALANCE` | `100000` | KZT deposited once on the demo user's account |
-
-Production values: [`.env.example`](.env.example) and [docs/DEPLOY.md](docs/DEPLOY.md).
-
-## Known limitations and roadmap
-
-- JWTs cannot be revoked before they expire: next step is short-lived access tokens + refresh tokens.
-- The auth rate limit is per IP only (no per-account lockout) with a fixed window: up to 2× the limit can pass
-  around a window boundary, and users behind one NAT share a limit. A sliding window or token bucket
-  (e.g. Bucket4j on Redis) plus a per-email counter would be the next step.
-- All deposits in one currency lock the same system account row (a hot spot under heavy load).
-- Published outbox rows are never cleaned up (needs a retention job); the DLT has no automatic replay.
-
-## Prepared local Keycloak authentication
-
-See [local cutover and activation](docs/runbooks/keycloak-local-cutover.md).
-Use the explicit `local-keycloak` profile and isolated Compose project; production
-authentication remains unchanged. The verified esep-web repository supports
-`VITE_AUTH_MODE=keycloak` with Code + PKCE S256.
-
-## Independent Ledger Service (Phase 3.1)
-
-The financial core is also available as an independently built local service in
-[services/ledger-service](services/ledger-service/README.md), using isolated
-`ledger_db` and a versioned Kafka topic. Existing monolith routes/data remain
-unchanged. See the [extraction report](docs/architecture/PHASE_3_1_LEDGER_EXTRACTION_REPORT.md)
-and [migration gates](docs/runbooks/ledger-extraction-migration.md).
+Production templates require external secrets, verified TLS, restricted roles,
+separate migrations, private networking and immutable images. They are not deployed
+automatically. Service image publication is explicit opt-in. The retained monolith
+is a controlled compatibility source, not a second writer against Ledger accounts.

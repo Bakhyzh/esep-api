@@ -1,7 +1,7 @@
 name: esep-platform-local
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac
     command: [postgres, -c, shared_preload_libraries=pg_stat_statements, -c, max_connections=80, -c, log_min_duration_statement=500, -c, log_statement=none, -c, log_parameter_max_length=0, -c, log_parameter_max_length_on_error=0, -c, log_error_verbosity=terse]
     environment:
       PLATFORM_BACKUP_PASSWORD: ${PLATFORM_BACKUP_PASSWORD:?required}
@@ -31,29 +31,61 @@ services:
       retries: 20
     mem_limit: 512m
   kafka:
-    image: apache/kafka:3.9.1
+    image: esep-platform-kafka:local
+    build: ./infrastructure/platform/kafka
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:SASL_PLAINTEXT,INTERNAL:SASL_PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_SASL_ENABLED_MECHANISMS: PLAIN
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAIN
+      KAFKA_SASL_MECHANISM_CONTROLLER_PROTOCOL: PLAIN
+      KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+      KAFKA_SUPER_USERS: User:broker;User:operator
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: false
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: false
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_HEAP_OPTS: -Xms192m -Xmx256m
+      KAFKA_BROKER_PASSWORD: ${KAFKA_BROKER_PASSWORD:?required}
+      KAFKA_ADMIN_PASSWORD: ${KAFKA_ADMIN_PASSWORD:?required}
+      KAFKA_USER_PASSWORD: ${KAFKA_USER_PASSWORD:?required}
+      KAFKA_LEDGER_PASSWORD: ${KAFKA_LEDGER_PASSWORD:?required}
+      KAFKA_NOTIFICATION_PASSWORD: ${KAFKA_NOTIFICATION_PASSWORD:?required}
+      KAFKA_ANALYTICS_PASSWORD: ${KAFKA_ANALYTICS_PASSWORD:?required}
+      KAFKA_MONITOR_PASSWORD: ${KAFKA_MONITOR_PASSWORD:?required}
+    command: [bash, /opt/esep/kafka/start.sh]
+    tmpfs: ["/tmp:size=128m,mode=1777"]
     volumes:
+      - ./infrastructure/platform/kafka/start.sh:/opt/esep/kafka/start.sh:ro
       - platform-kafka:/var/lib/kafka/data
     healthcheck:
-      test: [CMD-SHELL, "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      test: [CMD-SHELL, "KAFKA_HEAP_OPTS='-Xms16m -Xmx64m' /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 --command-config /tmp/esep-kafka-admin.properties > /dev/null 2>&1"]
       interval: 10s
       timeout: 10s
       retries: 20
     mem_limit: 448m
+  kafka-init:
+    image: esep-platform-kafka:local
+    entrypoint: [bash, /opt/esep/kafka/init.sh]
+    environment:
+      KAFKA_ADMIN_PASSWORD: ${KAFKA_ADMIN_PASSWORD:?required}
+    volumes: [./infrastructure/platform/kafka/init.sh:/opt/esep/kafka/init.sh:ro]
+    tmpfs: ["/tmp:size=16m,mode=1777"]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    depends_on:
+      kafka: {condition: service_healthy}
+    mem_limit: 160m
   user:
     build: ./services/user-service
     environment:
@@ -64,13 +96,16 @@ services:
       USER_MIGRATION_USERNAME: user_migrator
       USER_MIGRATION_PASSWORD: ${USER_MIGRATION_PASSWORD:?required}
       USER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: PLAIN
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="user" password="${KAFKA_USER_PASSWORD:?required}";'
       OIDC_ISSUER_URI: ${OIDC_ISSUER_URI:-http://localhost:8180/realms/esep}
       OIDC_JWK_SET_URI: http://keycloak:8080/realms/esep/protocol/openid-connect/certs
       JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
     ports: ["127.0.0.1:18083:8083"]
     depends_on:
       postgres: {condition: service_healthy}
-      kafka: {condition: service_healthy}
+      kafka-init: {condition: service_completed_successfully}
     networks: [default, identity]
     stop_grace_period: 45s
     mem_limit: 384m
@@ -86,6 +121,9 @@ services:
       LEDGER_MIGRATION_USERNAME: ledger_migrator
       LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?required}
       LEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: PLAIN
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="ledger" password="${KAFKA_LEDGER_PASSWORD:?required}";'
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
       LEDGER_INSTANCE: ledger-1
       LEDGER_IDENTITY_ENABLED: true
@@ -98,7 +136,7 @@ services:
     ports: ["127.0.0.1:18082:8082"]
     depends_on:
       postgres: {condition: service_healthy}
-      kafka: {condition: service_healthy}
+      kafka-init: {condition: service_completed_successfully}
     networks: [default, identity]
     stop_grace_period: 45s
     mem_limit: 384m
@@ -112,6 +150,9 @@ services:
       NOTIFICATION_MIGRATION_USERNAME: notification_migrator
       NOTIFICATION_MIGRATION_PASSWORD: ${NOTIFICATION_MIGRATION_PASSWORD:?required}
       NOTIFICATION_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: PLAIN
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="notification" password="${KAFKA_NOTIFICATION_PASSWORD:?required}";'
       NOTIFICATION_IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/notification_db
       NOTIFICATION_IDENTITY_DB_USERNAME: notification_projector
       NOTIFICATION_IDENTITY_DB_PASSWORD: ${NOTIFICATION_IDENTITY_DB_PASSWORD:?required}
@@ -121,7 +162,7 @@ services:
     ports: ["127.0.0.1:18084:8084"]
     depends_on:
       postgres: {condition: service_healthy}
-      kafka: {condition: service_healthy}
+      kafka-init: {condition: service_completed_successfully}
     networks: [default, identity]
     stop_grace_period: 45s
     mem_limit: 384m
@@ -135,6 +176,9 @@ services:
       ANALYTICS_MIGRATION_USERNAME: analytics_migrator
       ANALYTICS_MIGRATION_PASSWORD: ${ANALYTICS_MIGRATION_PASSWORD:?required}
       ANALYTICS_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: PLAIN
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="analytics" password="${KAFKA_ANALYTICS_PASSWORD:?required}";'
       ANALYTICS_IDENTITY_DB_URL: jdbc:postgresql://postgres:5432/analytics_db
       ANALYTICS_IDENTITY_DB_USERNAME: analytics_projector
       ANALYTICS_IDENTITY_DB_PASSWORD: ${ANALYTICS_IDENTITY_DB_PASSWORD:?required}
@@ -148,12 +192,12 @@ services:
     depends_on:
       redis: {condition: service_healthy}
       postgres: {condition: service_healthy}
-      kafka: {condition: service_healthy}
+      kafka-init: {condition: service_completed_successfully}
     networks: [default, identity]
     stop_grace_period: 45s
     mem_limit: 384m
   redis:
-    image: redis:7-alpine
+    image: redis:7-alpine@sha256:c5d34a98396a4775e223c74e929162c35c5a2182901ba26b50ade939941ce14b
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?required}
     command: [sh, -c, 'exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 64mb --maxmemory-policy allkeys-lru']
@@ -200,6 +244,9 @@ services:
       LEDGER_MIGRATION_USERNAME: ledger_migrator
       LEDGER_MIGRATION_PASSWORD: ${LEDGER_MIGRATION_PASSWORD:?required}
       LEDGER_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_PLAINTEXT
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: PLAIN
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="ledger" password="${KAFKA_LEDGER_PASSWORD:?required}";'
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 10
       LEDGER_INSTANCE: ledger-2
       LEDGER_IDENTITY_ENABLED: true
@@ -211,7 +258,7 @@ services:
       JAVA_OPTS: -XX:MaxRAMPercentage=50 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError
     depends_on:
       postgres: {condition: service_healthy}
-      kafka: {condition: service_healthy}
+      kafka-init: {condition: service_completed_successfully}
     networks: [default, identity]
     stop_grace_period: 45s
     mem_limit: 384m

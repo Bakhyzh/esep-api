@@ -20,6 +20,7 @@ def main():
     provider=environment(args.identity_dir/'.env') if args.include_keycloak else None
     directory=BACKUPS/('esep-backup-'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')+'-'+secrets.token_hex(4));private_dir(directory)
     result={'format':1,'project':'esep-platform-local','createdAt':datetime.now(timezone.utc).isoformat(),
+            'providerSourceDatabase':provider_database() if args.include_keycloak else None,
             'sourceCommit':run(['git','-C',str(ROOT),'rev-parse','HEAD']).decode().strip(),'databases':{}}
     for database in (*DATABASES,*(('keycloak_db',) if args.include_keycloak else ())):
         is_provider=database=='keycloak_db';user='keycloak' if is_provider else 'platform_backup'

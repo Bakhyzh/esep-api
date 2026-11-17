@@ -5,6 +5,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+    paths-ignore: ['docs/**', README.md]
   # Manual dispatch may deploy only when the explicit production input is selected.
   workflow_dispatch:
     inputs:
@@ -140,8 +141,7 @@ jobs:
           # --wait: returns only when every container with a healthcheck is healthy (or fails after the timeout)
           $compose up -d --remove-orphans --wait --wait-timeout 240
           $compose ps
-          # keep recent images for a fast rollback, drop the rest
-          docker image prune -af --filter "until=240h" > /dev/null
+          # Preserve rollback images; retention is an explicit operator action.
           SCRIPT
 
       - name: Health check through HTTPS

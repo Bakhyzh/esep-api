@@ -90,7 +90,8 @@ def main():
             check(request('POST',url+'/role-mappings/clients/'+client['id'],[roles[role]],token=admin)[0]==204,'Temporary role assignment failed')
             tokens=helper['login']('esep','esep-web',helper['CALLBACK'],name,password)
             token=tokens['access_token']
-            check(api(args.ledger_url,'/api/accounts',token)[0]==403,'Ledger accepted unknown identity')
+            unknown_status=api(args.ledger_url,'/api/accounts',token)[0]
+            check(unknown_status==403,'Unknown identity expected403, observed HTTP'+str(unknown_status))
             status,profile=api(args.user_url,'/api/auth/me',token)
             check(status==200 and profile['role']==role,'User authority provisioning failed')
             check(api(args.user_url,'/api/auth/me',token)[1]['id']==profile['id'],'Identity allocation was not repeatable')

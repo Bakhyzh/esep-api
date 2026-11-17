@@ -12,8 +12,8 @@ an assertion that the entire platform is complete or production-ready.
 | E Edge/scaling | Implemented locally; two Gateways/two Ledger, pinned non-root Nginx/static frontend; Gateway7/Ledger89 tests; real edge browser and both replica kill/recovery plus invariants passed; published backendece425a / frontenda70afab; CI42239735085 all7 /42239146949 success |
 | F DBA/DR | Implemented locally; 4 real role/Flyway/timeout tests and 4 age/artifact tests; authenticated4/5DB backups and restricted row/sequence-exact restores; physical named-point PITR verified; actual12-container restart, real browser/API regression and financial invariants passed; published c53eb8df912d7e3d36b51d67e3d46e3482909ec5; CI42308685427 all8 success |
 | G Observability | Implemented/locally verified: compact9-target metrics,19 Grafana panels, Loki logs, two continuous money traces/privacy; real browser/broker/replica tests pass; two-Ledger scaling tested separately with UI paused for4-GB VM; published main5054eb2e4e22f63bf057e1558662c201fcb7e3e5; CI42352264110 all9 success |
-| H Performance/resilience | Locally verified: nine real k6 workloads, actual Docker k6 baseline, all six controlled fault groups pass; exact conservation/SQL/Kafka reconciliation; pool starvation and harness findings fixed; feature CI/publication pending |
-| I Hardening/CI | Per-service CI expanded incrementally; complete secure configuration/E2E/image/contract pipeline and documentation still pending |
+| H Performance/resilience | Locally verified: nine real k6 workloads, actual Docker k6 baseline, all six controlled fault groups pass; exact conservation/SQL/Kafka reconciliation; pool starvation and harness findings fixed; published main14b23f0e1d83c97a772d3153a0e194aaf7dea77f; CI42355856981 all10 success, remote SHA verified |
+| I Hardening/CI | In progress: broker SASL/ACL boundaries, persistent Kafka path audit and verified encrypted472-file preservation; production guards/full-stack CI/image scans/documentation remain |
 
 Workspace: /Users/bakhytzharqynbek/Downloads/esep-platform. Separate original
 worktrees/untracked db-lab and seven architecture documents remain unchanged.

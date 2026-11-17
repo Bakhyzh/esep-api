@@ -1,0 +1,15 @@
+# Explicit production opt-in. Migration runs separately; credentials have no defaults.
+spring:
+  flyway.enabled: false
+  jpa.hibernate.ddl-auto: validate
+  kafka.properties:
+    security.protocol: SASL_SSL
+    sasl.mechanism: ${KAFKA_SASL_MECHANISM}
+    sasl.jaas.config: ${KAFKA_CLIENT_JAAS}
+  kafka.properties.ssl.endpoint.identification.algorithm: https
+esep.identity.enabled: true
+server.ssl:
+  enabled: true
+  key-store: ${SERVER_SSL_KEY_STORE}
+  key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD}
+  key-store-type: PKCS12

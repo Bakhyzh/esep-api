@@ -16,3 +16,12 @@ scripts/
 
 # Independently built services are not part of the monolith image context.
 services/
+
+# Never send private recovery keys, snapshots, laboratories or a nested frontend checkout to image builds.
+.platform-secrets/
+.platform-backups/
+.platform-lab/
+platform-frontend/
+db-lab/
+tests/
+infrastructure/

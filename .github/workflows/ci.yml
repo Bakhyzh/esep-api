@@ -5,6 +5,7 @@ name: CI
 on:
   push:
     branches-ignore: [main]
+    paths-ignore: ['docs/**', README.md]
   pull_request:
   workflow_call:
 
@@ -41,6 +42,9 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t esep-api:ci .
+      - name: Scan exported runtime image without Docker socket or credentials
+        run: python3 infrastructure/security/scan-image.py --image esep-api:ci --output-dir /tmp/security-results
+
 
   ledger:
     runs-on: ubuntu-latest
@@ -71,6 +75,9 @@ jobs:
 
       - name: Build independent Ledger image
         run: docker build -t esep-ledger:ci services/ledger-service
+      - name: Scan exported runtime image without Docker socket or credentials
+        run: python3 infrastructure/security/scan-image.py --image esep-ledger:ci --output-dir /tmp/security-results
+
 
   user:
     runs-on: ubuntu-latest
@@ -85,25 +92,8 @@ jobs:
       - name: User authority integration and security
         run: ./mvnw -B -f services/user-service/pom.xml verify
       - name: Platform configuration
-        env:
-          PLATFORM_DB_BOOTSTRAP_PASSWORD: ci-placeholder-bootstrap
-          USER_MIGRATION_PASSWORD: ci-placeholder-user-migration
-          USER_DB_PASSWORD: ci-placeholder-user-runtime
-          LEDGER_MIGRATION_PASSWORD: ci-placeholder-ledger-migration
-          LEDGER_DB_PASSWORD: ci-placeholder-ledger-runtime
-          LEDGER_IDENTITY_DB_PASSWORD: ci-placeholder-projector
-          NOTIFICATION_MIGRATION_PASSWORD: ci-placeholder-notification-migration
-          NOTIFICATION_DB_PASSWORD: ci-placeholder-notification-runtime
-          NOTIFICATION_IDENTITY_DB_PASSWORD: ci-placeholder-notification-projector
-          ANALYTICS_MIGRATION_PASSWORD: ci-placeholder-analytics-migration
-          ANALYTICS_DB_PASSWORD: ci-placeholder-analytics-runtime
-          ANALYTICS_IDENTITY_DB_PASSWORD: ci-placeholder-analytics-projector
-          REDIS_PASSWORD: ci-placeholder-cache
-          PLATFORM_FRONTEND_CONTEXT: ./frontend
-          PLATFORM_BACKUP_PASSWORD: ci-placeholder-backup
-          PLATFORM_OPS_PASSWORD: ci-placeholder-monitor
-          PLATFORM_RESTORE_PASSWORD: ci-placeholder-restore
-        run: docker compose -f compose.platform.yaml config -q
+        run: python3 infrastructure/platform/validate-config.py
+
       - name: User committed-source secret scan
         run: |
           mkdir -p /tmp/user-scan
@@ -111,6 +101,9 @@ jobs:
           docker run --rm -v /tmp/user-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
       - name: Independent User image
         run: docker build -t esep-user:ci services/user-service
+      - name: Scan exported runtime image without Docker socket or credentials
+        run: python3 infrastructure/security/scan-image.py --image esep-user:ci --output-dir /tmp/security-results
+
 
   notification:
     runs-on: ubuntu-latest
@@ -131,6 +124,9 @@ jobs:
           docker run --rm -v /tmp/notification-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
       - name: Independent Notification image
         run: docker build -t esep-notification:ci services/notification-service
+      - name: Scan exported runtime image without Docker socket or credentials
+        run: python3 infrastructure/security/scan-image.py --image esep-notification:ci --output-dir /tmp/security-results
+
 
   analytics:
     runs-on: ubuntu-latest
@@ -151,6 +147,9 @@ jobs:
           docker run --rm -v /tmp/analytics-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
       - name: Independent Analytics image
         run: docker build -t esep-analytics:ci services/analytics-service
+      - name: Scan exported runtime image without Docker socket or credentials
+        run: python3 infrastructure/security/scan-image.py --image esep-analytics:ci --output-dir /tmp/security-results
+
 
   gateway:
     runs-on: ubuntu-latest
@@ -171,6 +170,9 @@ jobs:
           docker run --rm -v /tmp/gateway-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
       - name: Independent Gateway image
         run: docker build -t esep-gateway:ci services/api-gateway
+      - name: Scan exported runtime image without Docker socket or credentials
+        run: python3 infrastructure/security/scan-image.py --image esep-gateway:ci --output-dir /tmp/security-results
+
 
   edge:
     runs-on: ubuntu-latest
@@ -248,3 +250,72 @@ jobs:
           mkdir -p /tmp/performance-scan
           git archive HEAD tests/performance compose.performance.yaml infrastructure/platform/compose.identity-m1.yaml | tar -x -C /tmp/performance-scan
           docker run --rm -v /tmp/performance-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
+
+  hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Real isolated production edge TLS and template validation
+        run: python3 infrastructure/production/validate.py
+      - name: Validate protected lifecycle and broker scripts
+        run: |
+          python3 -m py_compile scripts/platform.py infrastructure/platform/kafka/*.py infrastructure/security/*.py tests/e2e/kafka-*.py
+          bash -n infrastructure/platform/kafka/start.sh infrastructure/platform/kafka/init.sh infrastructure/production/edge-start.sh
+      - name: Scan every tracked source with no private working files
+        run: |
+          mkdir -p /tmp/repository-scan
+          git archive HEAD | tar -x -C /tmp/repository-scan
+          docker run --rm -v /tmp/repository-scan:/scan:ro ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f dir /scan --redact --no-banner
+
+  platform-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - name: Read verified frontend contract
+        id: frontend
+        run: python3 -c 'import json; print("sha="+json.load(open("contracts/platform-versions.json"))["frontendCommit"])' >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          repository: Bakhyzh/esep-web
+          ref: ${{ steps.frontend.outputs.sha }}
+          path: platform-frontend
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: platform-frontend/package-lock.json
+      - name: Prepare actual browser dependencies
+        working-directory: platform-frontend
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Initialize isolated random secrets and fresh broker storage
+        run: python3 scripts/platform.py init --frontend-dir platform-frontend
+      - name: Build every independent runtime and verified frontend
+        run: python3 scripts/platform.py build
+      - name: Start real local Keycloak, databases, broker, cache, services and edge
+        run: python3 scripts/platform.py start
+      - name: Scan actual infrastructure runtime images without container secrets
+        run: |
+          python3 infrastructure/security/scan-image.py --image esep-platform-kafka:local --output-dir /tmp/security-infra
+          python3 infrastructure/security/scan-image.py --image quay.io/keycloak/keycloak:26.8.2@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b --output-dir /tmp/security-infra
+          python3 infrastructure/security/scan-image.py --image postgres:17-alpine@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac --output-dir /tmp/security-infra
+          python3 infrastructure/security/scan-image.py --image redis:7-alpine@sha256:c5d34a98396a4775e223c74e929162c35c5a2182901ba26b50ade939941ce14b --output-dir /tmp/security-infra
+          python3 infrastructure/security/scan-image.py --image nginx:1.30.6-alpine@sha256:583b7f2fce1cdb8da5ad5c39ebd3c33b98b87d493190e548bdee1fa8c619c311 --output-dir /tmp/security-infra
+      - name: Real producer identity/financial topic ACL boundaries
+        run: python3 tests/e2e/kafka-security.py
+      - name: Full Code+PKCE, identity, ownership, transfers, outbox, Kafka outage and browser flow
+        run: python3 tests/e2e/identity-flow.py --identity-dir infrastructure/keycloak --notification-url http://localhost:18084 --analytics-url http://localhost:18085 --gateway-url http://localhost:18081 --frontend-dir platform-frontend --broker-recovery
+      - name: Actual committed event contracts
+        run: |
+          python3 -m venv /tmp/contracts-venv
+          /tmp/contracts-venv/bin/pip install -r tests/contracts/requirements.txt
+          /tmp/contracts-venv/bin/python tests/contracts/validate.py --live
+      - name: Stop isolated consumers before durable broker recreation
+        run: docker stop --timeout 45 esep-platform-local-user-1 esep-platform-local-ledger-1 esep-platform-local-notification-1 esep-platform-local-analytics-1
+      - name: Actual broker recreation retains offsets, group positions and authorization
+        run: python3 tests/e2e/kafka-persistence.py --recreate-local
+      - name: Stop only labelled CI platform, keeping volumes
+        if: always()
+        run: if test -f .env.platform; then python3 scripts/platform.py stop; fi

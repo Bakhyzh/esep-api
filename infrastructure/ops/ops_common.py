@@ -68,9 +68,17 @@ def quiescent(include_keycloak=False):
     if include_keycloak and container('esep-identity-dev','keycloak')['State']['Running']:
         raise RuntimeError('Stop the existing local Keycloak application, retaining its database, for a consistent provider backup')
 
+def provider_database():
+    path=ROOT/'.env.identity-secure'
+    if not path.exists():return 'keycloak_db'
+    name=environment(path).get('KEYCLOAK_SECURE_DB_NAME','')
+    if not re.fullmatch(r'keycloak_secure_[0-9]{14}_[a-f0-9]{6}',name):raise RuntimeError('Unexpected verified local identity database')
+    return name
+
 def db_command(database,user,kind='psql',provider=False,extra=()):
     target=container('esep-identity-dev' if provider else 'esep-platform-local','keycloak-db' if provider else 'postgres')['Id']
-    return ['docker','exec','-i','-e','PGPASSWORD',target,kind,'-h','127.0.0.1','-U',user,'-d',database,*extra]
+    actual=provider_database() if provider and database=='keycloak_db' else database
+    return ['docker','exec','-i','-e','PGPASSWORD',target,kind,'-h','127.0.0.1','-U',user,'-d',actual,*extra]
 
 def password_env(password):
     env=os.environ.copy();env['PGPASSWORD']=password;return env
