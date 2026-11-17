@@ -73,7 +73,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 20
-    mem_limit: 448m
+    # Broker plus health/admin JVMs share this cgroup; x86 CLI bursts need headroom.
+    mem_limit: 768m
   kafka-init:
     image: esep-platform-kafka:local
     entrypoint: [bash, /opt/esep/kafka/init.sh]

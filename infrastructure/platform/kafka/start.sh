@@ -25,7 +25,7 @@ security.protocol=SASL_PLAINTEXT
 sasl.mechanism=PLAIN
 sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="operator" password="$KAFKA_ADMIN_PASSWORD";
 request.timeout.ms=3000
-default.api.timeout.ms=5000
+default.api.timeout.ms=15000
 EOF
 # The image translates KAFKA_* variables into server properties. Do not persist our
 # bootstrap-only password variables as unrelated plaintext properties.

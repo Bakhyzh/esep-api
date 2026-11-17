@@ -3,6 +3,7 @@
 import json
 import argparse
 import os
+import re
 from pathlib import Path
 import secrets
 import subprocess
@@ -24,11 +25,25 @@ def main():
     require(model['KAFKA_SUPER_USERS']=='User:broker;User:operator','Unexpected superuser bypass')
     require(model['KAFKA_LISTENER_SECURITY_PROTOCOL_MAP']=='CONTROLLER:SASL_PLAINTEXT,INTERNAL:SASL_PLAINTEXT','Unauthenticated listener available')
     require(model['KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND']=='false','Default allow configured')
-    base=['docker','exec','-i','-e','KAFKA_HEAP_OPTS=-Xms16m -Xmx64m',target]
+    base=['docker','exec','-i','-e','KAFKA_HEAP_OPTS=-Xms16m -Xmx96m',target]
     admin=['--bootstrap-server','kafka:9092','--command-config','/tmp/esep-kafka-admin.properties']
-    topics=ops.run(base+['/opt/kafka/bin/kafka-topics.sh',*admin,'--list']).decode().splitlines()
+    def admin_output(tool,arguments):
+        result=subprocess.run(base+['/opt/kafka/bin/'+tool,*admin,*arguments],capture_output=True,timeout=40)
+        if result.returncode:
+            # Raw Java configuration/diagnostics can contain credentials. Report
+            # only exception class names and actual container termination state.
+            allowed=('TimeoutException','OutOfMemoryError','UnsupportedVersionException','SaslAuthenticationException',
+                     'TopicAuthorizationException','ClusterAuthorizationException','GroupAuthorizationException',
+                     'FileNotFoundException','ConfigException','IllegalArgumentException','IOException',
+                     'NoSuchFileException','SecurityException','UnknownHostException')
+            classes=[name for name in allowed if re.search(rb'\b'+name.encode()+rb'\b',result.stderr)]
+            state=json.loads(ops.run(['docker','inspect',target]))[0]['State']
+            raise RuntimeError('Kafka '+tool+': exit '+str(result.returncode)+'; classes='+','.join(classes)
+                               +'; brokerRunning='+str(state['Running'])+'; brokerOOMKilled='+str(state.get('OOMKilled',False)))
+        return result.stdout.decode().splitlines()
+    topics=admin_output('kafka-topics.sh',['--list'])
     require({'esep.users.v1','esep.ledger.postings.v1','esep.ledger.transfers.v1','esep.ledger.accounts.v1'}.issubset(topics),'Preserved financial/identity topics missing')
-    groups=ops.run(base+['/opt/kafka/bin/kafka-consumer-groups.sh',*admin,'--list']).decode().splitlines()
+    groups=admin_output('kafka-consumer-groups.sh',['--list','--timeout','15000'])
     checks=[]
     for principal,topic in [('user','esep.ledger.postings.v1'),('ledger','esep.users.v1'),('notification','esep.ledger.transfers.v1'),('analytics','esep.ledger.postings.v1'),('monitor','esep.users.v1')]:
         config='/tmp/esep-acl-probe-'+secrets.token_hex(8)+'.properties'
